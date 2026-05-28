@@ -1,14 +1,12 @@
-import { CommandData, MessageCommand, ApplicationCommand } from "@type/commands";
+import { CommandData } from "@type/commands";
 
 const voteLink = "https://top.gg/bot/995999045157916763";
 const voteString = `You can vote for the bot using the following link:\n${voteLink}`;
 
-export async function runMessage({ message }: MessageCommand) {
-    await message.reply(voteString);
-}
+import { CommandContext } from "@utils/command-context";
 
-export async function runApplication({ interaction }: ApplicationCommand) {
-    await interaction.reply(voteString);
+export async function run(ctx: CommandContext) {
+    await ctx.reply(voteString);
 }
 
 export const data = {

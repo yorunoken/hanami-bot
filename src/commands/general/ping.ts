@@ -1,26 +1,20 @@
-import { CommandData, MessageCommand, ApplicationCommand } from "@type/commands";
+import { CommandData } from "@type/commands";
 import { client } from "@utils/initialize";
 
-export async function runMessage({ message }: MessageCommand) {
-    const newMessage = await message.reply({
-        content: "🏓...",
-    });
+import { CommandContext } from "@utils/command-context";
 
-    const { ws, rest } = await message.client.ping();
+export async function run(ctx: CommandContext) {
+    await ctx.defer();
+    const isMessage = ctx.isMessage;
 
+    if (isMessage) {
+        await ctx.reply({ content: "🏓..." });
+    }
+
+    const { ws, rest } = await ctx.client.ping();
     const osuDuration = await getOsuResponseTime();
-    await newMessage.edit({
-        content: `🏓 WebSocket: \`${ws.toFixed()}ms\` | Rest: \`${rest.toFixed()}ms\`\nosu! API: \`${osuDuration.toFixed()}ms\``,
-    });
-}
 
-export async function runApplication({ interaction }: ApplicationCommand) {
-    await interaction.deferReply();
-
-    const { ws, rest } = await interaction.client.ping();
-
-    const osuDuration = await getOsuResponseTime();
-    await interaction.editReply({
+    await ctx.editReply({
         content: `🏓 WebSocket: \`${ws.toFixed()}ms\` | Rest: \`${rest.toFixed()}ms\`\nosu! API: \`${osuDuration.toFixed()}ms\``,
     });
 }
