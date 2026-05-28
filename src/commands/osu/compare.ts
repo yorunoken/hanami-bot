@@ -2,9 +2,9 @@ import { compareBuilder } from "@builders";
 import { MessageReplyOptions } from "@lilybird/transformers";
 import { EmbedBuilderType } from "@type/builders";
 import { SuccessUser, UserType } from "@type/command-args";
-import { CommandData, MessageCommand, ApplicationCommand } from "@type/commands";
+import { CommandData } from "@type/commands";
 import { Mode } from "@type/osu";
-import { getCommandArgs, parseOsuArguments } from "@utils/args";
+import { parseCommandArgs } from "@utils/args";
 import { getBeatmapIdFromContext } from "@utils/osu";
 import { getBeatmapUserScores } from "@utils/score-api";
 import { createPaginationActionRow } from "@utils/pagination";
@@ -24,28 +24,24 @@ const modeAliases: Record<string, { mode: Mode }> = {
     comparecatch: { mode: Mode.FRUITS },
 };
 
-export async function runMessage({ message, args, channel, commandName }: MessageCommand) {
-    const { user, mods } = parseOsuArguments(message, args, modeAliases[commandName].mode);
+import { CommandContext } from "@utils/command-context";
+
+export async function run(ctx: CommandContext) {
+    await ctx.defer();
+    const mode = modeAliases[ctx.commandName ?? "compare"]?.mode ?? Mode.OSU;
+    const { user, mods } = parseCommandArgs(ctx, mode);
+
     if (user.type === UserType.FAIL) {
-        await channel.send(user.failMessage);
+        await ctx.editReply(user.failMessage);
         return;
     }
 
-    const reply = await getEmbeds(user, message.author.id, mods, { message, client: message.client });
-    await channel.send(reply);
-}
+    const context = ctx.isInteraction 
+        ? { channelId: ctx.channelId, client: ctx.client, id: ctx.interaction!.id }
+        : { message: ctx.message, client: ctx.client };
 
-export async function runApplication({ interaction }: ApplicationCommand) {
-    await interaction.deferReply();
-
-    const { user, mods } = getCommandArgs(interaction);
-    if (user.type === UserType.FAIL) {
-        await interaction.editReply(user.failMessage);
-        return;
-    }
-
-    const reply = await getEmbeds(user, interaction.member.user.id, mods, { channelId: interaction.channelId, client: interaction.client });
-    await interaction.editReply(reply);
+    const reply = await getEmbeds(user, ctx.user.id, mods, context);
+    await ctx.editReply(reply);
 }
 
 async function getEmbeds(user: SuccessUser, authorId: string, mods: any, context: any): Promise<MessageReplyOptions> {

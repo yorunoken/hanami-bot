@@ -2,15 +2,14 @@ import { playBuilder } from "@builders";
 import { MessageReplyOptions } from "@lilybird/transformers";
 import { EmbedBuilderType } from "@type/builders";
 import { SuccessUser, UserType } from "@type/command-args";
-import { CommandData, MessageCommand, ApplicationCommand } from "@type/commands";
+import { CommandData } from "@type/commands";
 import { Mode, PlayType } from "@type/osu";
-import { getCommandArgs, parseOsuArguments } from "@utils/args";
+import { parseCommandArgs } from "@utils/args";
 import { createPaginationActionRow } from "@utils/pagination";
 import { getUserScores } from "@utils/score-api";
 import { client } from "@utils/initialize";
 import { ApplicationCommandOptionType, EmbedType } from "lilybird";
 import type { PlaysBuilderOptions } from "@type/builders";
-import type { Mod } from "osu-web.js";
 
 const modeAliases: Record<string, { mode: Mode; includeFails: boolean }> = {
     r: { mode: Mode.OSU, includeFails: true },
@@ -34,50 +33,34 @@ const modeAliases: Record<string, { mode: Mode; includeFails: boolean }> = {
     recentpasscatch: { mode: Mode.FRUITS, includeFails: false },
 };
 
-export async function runMessage({ message, args, channel, commandName, index = 0 }: MessageCommand & { index?: number }) {
-    const { mode, includeFails } = modeAliases[commandName];
-    const { user, mods } = parseOsuArguments(message, args, mode);
+import { CommandContext } from "@utils/command-context";
+
+export async function run(ctx: CommandContext) {
+    await ctx.defer();
+
+    let mode = Mode.OSU;
+    let includeFails = true;
+    let index = 0;
+
+    if (ctx.isInteraction) {
+        includeFails = !(ctx.interaction!.data.getBoolean("passes") ?? false);
+        index = (ctx.interaction!.data.getInteger("index") ?? 1) - 1;
+    } else {
+        const aliasConfig = modeAliases[ctx.commandName ?? "recent"];
+        mode = aliasConfig?.mode ?? Mode.OSU;
+        includeFails = aliasConfig?.includeFails ?? true;
+        index = ctx.index ?? 0;
+    }
+
+    const { user, mods } = parseCommandArgs(ctx, mode);
+
     if (user.type === UserType.FAIL) {
-        await channel.send(user.failMessage);
+        await ctx.editReply(user.failMessage);
         return;
     }
 
-    const reply = await getEmbeds(user, message.author.id, index, mods, includeFails);
-    await channel.send(reply);
-}
-
-export async function runApplication({ interaction }: ApplicationCommand) {
-    await interaction.deferReply();
-
-    const { user } = getCommandArgs(interaction);
-    if (user.type === UserType.FAIL) {
-        await interaction.editReply(user.failMessage);
-        return;
-    }
-
-    const includeFails = !(interaction.data.getBoolean("passes") ?? false);
-    const index = (interaction.data.getInteger("index") ?? 1) - 1;
-
-    const mod = interaction.data.getString("mods") as Mod;
-    const modsAction = interaction.data.getString("mods_action");
-
-    const mods = { exclude: false, forceInclude: false, include: false, name: mod };
-    switch (modsAction) {
-        case "include":
-            mods.include = true;
-            break;
-        case "force_include":
-            mods.forceInclude = true;
-            break;
-        case "exclude":
-            mods.exclude = true;
-            break;
-        default:
-            mods.include = true;
-    }
-
-    const reply = await getEmbeds(user, interaction.member.user.id, index, mods, includeFails);
-    await interaction.editReply(reply);
+    const reply = await getEmbeds(user, ctx.user.id, index, mods, includeFails);
+    await ctx.editReply(reply);
 }
 
 async function getEmbeds(user: SuccessUser, authorId: string, index: number, mods: any, includeFails: boolean): Promise<MessageReplyOptions> {

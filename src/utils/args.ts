@@ -3,7 +3,8 @@ import { Mode } from "@type/osu";
 import { UserType } from "@type/command-args";
 import { Tables } from "@type/database";
 import { ModsEnum } from "osu-web.js";
-import type { SlashCommandArgs, DifficultyOptions, Mods, PrefixCommandArgs, User } from "@type/command-args";
+import type { SlashCommandArgs, DifficultyOptions, Mods, PrefixCommandArgs, User, CommandArgs } from "@type/command-args";
+import type { CommandContext } from "./command-context";
 import type { Mod } from "osu-web.js";
 import type { ApplicationCommandData, GuildInteraction, Message } from "@lilybird/transformers";
 import { slashCommandIdsCache } from "./cache";
@@ -237,4 +238,27 @@ export function parseOsuArguments(message: Message, args: Array<string>, mode: M
     }
 
     return result;
+}
+
+export function parseCommandArgs(ctx: CommandContext, mode: Mode = Mode.OSU, getAttributes?: boolean): CommandArgs {
+    if (ctx.isInteraction) {
+        const slashArgs = getCommandArgs(ctx.interaction!, getAttributes);
+        const flags: Record<string, string | undefined> = {};
+        
+        const options = (ctx.interaction!.data as any).options ?? [];
+        for (const opt of options) {
+            if (opt.value !== undefined && opt.value !== null) {
+                flags[opt.name] = String(opt.value);
+            }
+        }
+        
+        // Emulate some flags like `-p` for interactions
+        if (flags["page"]) flags["p"] = flags["page"];
+        
+        // Also map mods_action to specific flag behavior if necessary, but mods are handled in slashArgs.mods
+        return { ...slashArgs, flags };
+    } else {
+        const prefixArgs = parseOsuArguments(ctx.message!, ctx.args, mode);
+        return { ...prefixArgs };
+    }
 }

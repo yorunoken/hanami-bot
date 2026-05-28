@@ -1,11 +1,16 @@
-import { CommandData, ApplicationCommand } from "@type/commands";
+import { CommandData } from "@type/commands";
 import { ApplicationCommandOptionType, type Embed } from "lilybird";
 import { getEntry, insertData } from "@utils/database";
 import { ScoreEmbed, Tables } from "@type/database";
 import type { ApplicationCommandData, GuildInteraction } from "@lilybird/transformers";
 
-export async function runApplication({ interaction }: ApplicationCommand): Promise<void> {
-    await interaction.deferReply();
+import { CommandContext } from "@utils/command-context";
+
+export async function run(ctx: CommandContext): Promise<void> {
+    await ctx.defer();
+
+    const { interaction } = ctx;
+    if (!interaction) return;
 
     const { data } = interaction;
     const { id: userId, username } = interaction.member.user;

@@ -2,36 +2,28 @@ import { profileBuilder } from "@builders";
 import { MessageReplyOptions } from "@lilybird/transformers";
 import { EmbedBuilderType } from "@type/builders";
 import { SuccessUser, UserType } from "@type/command-args";
-import { CommandData, MessageCommand, ApplicationCommand } from "@type/commands";
+import { CommandData } from "@type/commands";
 import { Mode } from "@type/osu";
-import { getCommandArgs, parseOsuArguments } from "@utils/args";
+import { parseCommandArgs } from "@utils/args";
 import { client } from "@utils/initialize";
 import { ApplicationCommandOptionType, EmbedType } from "lilybird";
 
-export async function runMessage({ message, args, channel, commandName }: MessageCommand) {
+import { CommandContext } from "@utils/command-context";
+
+export async function run(ctx: CommandContext) {
+    await ctx.defer();
+
+    let commandName = ctx.commandName;
     if (commandName === "profile") commandName = Mode.OSU;
 
-    const { user } = parseOsuArguments(message, args, commandName as Mode);
+    const { user } = parseCommandArgs(ctx, (commandName as Mode) ?? Mode.OSU);
     if (user.type === UserType.FAIL) {
-        await channel.send(user.failMessage);
+        await ctx.editReply(user.failMessage);
         return;
     }
 
-    const reply = await getEmbeds(user, message.author.id);
-    await channel.send(reply);
-}
-
-export async function runApplication({ interaction }: ApplicationCommand) {
-    await interaction.deferReply();
-
-    const { user } = getCommandArgs(interaction);
-    if (user.type === UserType.FAIL) {
-        await interaction.editReply(user.failMessage);
-        return;
-    }
-
-    const reply = await getEmbeds(user, interaction.member.user.id);
-    await interaction.editReply(reply);
+    const reply = await getEmbeds(user, ctx.user.id);
+    await ctx.editReply(reply);
 }
 
 async function getEmbeds(user: SuccessUser, authorId: string): Promise<MessageReplyOptions> {

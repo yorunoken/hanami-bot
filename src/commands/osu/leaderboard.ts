@@ -1,9 +1,9 @@
 import { leaderboardBuilder } from "@builders";
 import { MessageReplyOptions } from "@lilybird/transformers";
 import { EmbedBuilderType } from "@type/builders";
-import { CommandData, MessageCommand, ApplicationCommand } from "@type/commands";
+import { CommandData } from "@type/commands";
 import { Mode } from "@type/osu";
-import { getCommandArgs, parseOsuArguments } from "@utils/args";
+import { parseCommandArgs } from "@utils/args";
 import { getBeatmapIdFromContext, getBeatmapTopScores } from "@utils/osu";
 import { createPaginationActionRow } from "@utils/pagination";
 import { ButtonStateCache } from "@utils/cache";
@@ -21,24 +21,32 @@ const modeAliases: Record<string, { isGlobal: boolean }> = {
     ct: { isGlobal: false },
 };
 
-export async function runMessage({ message, args, channel, commandName }: MessageCommand) {
-    const { isGlobal } = modeAliases[commandName];
-    const { user, mods, flags } = parseOsuArguments(message, args, Mode.OSU);
+import { CommandContext } from "@utils/command-context";
 
-    const page = Number(flags.p ?? flags.page ?? 1) - 1;
-    const reply = await getEmbeds(user.beatmapId ?? undefined, message.author.id, mods, isGlobal, page, { message, client: message.client });
-    await channel.send(reply);
-}
+export async function run(ctx: CommandContext) {
+    await ctx.defer();
 
-export async function runApplication({ interaction }: ApplicationCommand) {
-    await interaction.deferReply();
+    let isGlobal = true;
+    let page = 0;
 
-    const { user, mods } = getCommandArgs(interaction);
-    const isGlobal = (interaction.data.getString("type") ?? "global") === "global";
-    const page = (interaction.data.getNumber("page") ?? 1) - 1;
+    if (ctx.isInteraction) {
+        isGlobal = (ctx.interaction!.data.getString("type") ?? "global") === "global";
+        page = (ctx.interaction!.data.getNumber("page") ?? 1) - 1;
+    } else {
+        isGlobal = modeAliases[ctx.commandName ?? "leaderboard"]?.isGlobal ?? true;
+    }
 
-    const reply = await getEmbeds(user.beatmapId ?? undefined, interaction.member.user.id, mods, isGlobal, page, { channelId: interaction.channelId, client: interaction.client });
-    await interaction.editReply(reply);
+    const { user, mods, flags } = parseCommandArgs(ctx, Mode.OSU);
+    if (!ctx.isInteraction) {
+        page = Number(flags.p ?? flags.page ?? 1) - 1;
+    }
+
+    const context = ctx.isInteraction 
+        ? { channelId: ctx.channelId, client: ctx.client, id: ctx.interaction!.id }
+        : { message: ctx.message, client: ctx.client };
+
+    const reply = await getEmbeds(user.beatmapId ?? undefined, ctx.user.id, mods, isGlobal, page, context);
+    await ctx.editReply(reply);
 }
 
 async function getEmbeds(beatmapId: string | undefined, authorId: string, mods: any, isGlobal: boolean, page: number, context: any): Promise<MessageReplyOptions> {

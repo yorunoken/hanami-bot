@@ -1,17 +1,17 @@
-import { CommandData, MessageCommand, ApplicationCommand } from "@type/commands";
+import { CommandData } from "@type/commands";
 import { ApplicationCommandOptionType } from "lilybird";
 import { helpBuilder } from "@builders";
 
-export async function runMessage({ message, args }: MessageCommand) {
-    await message.reply({ embeds: helpBuilder(args[0]) });
-}
+import { CommandContext } from "@utils/command-context";
 
-export async function runApplication({ interaction }: ApplicationCommand) {
-    await interaction.deferReply();
+export async function run(ctx: CommandContext) {
+    await ctx.defer();
 
-    const commandName = interaction.data.getString("command");
-    await interaction.editReply({
-        embeds: helpBuilder(commandName, true),
+    const commandName = ctx.isInteraction ? ctx.interaction!.data.getString("command") : ctx.args[0];
+    const preferSlash = ctx.isInteraction;
+
+    await ctx.editReply({
+        embeds: helpBuilder(commandName, preferSlash),
     });
 }
 

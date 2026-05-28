@@ -1,29 +1,27 @@
 import { beatmapBuilder } from "@builders";
 import { EmbedBuilderType } from "@type/builders";
 import { Mods } from "@type/command-args";
-import { CommandData, MessageCommand, ApplicationCommand } from "@type/commands";
+import { CommandData } from "@type/commands";
 import { Mode } from "@type/osu";
-import { getCommandArgs, parseOsuArguments } from "@utils/args";
+import { parseCommandArgs } from "@utils/args";
 import { getBeatmapIdFromContext } from "@utils/osu";
 import { ApplicationCommandOptionType, EmbedType } from "lilybird";
 import { Mod } from "osu-web.js";
 
-export async function runMessage({ message, channel, args }: MessageCommand) {
-    const { user, mods } = parseOsuArguments(message, args, Mode.OSU);
+import { CommandContext } from "@utils/command-context";
 
-    const beatmapId = user.beatmapId ?? (await getBeatmapIdFromContext({ message, client: message.client }));
-    const embeds = await getEmbed(beatmapId, message.author.id, mods);
-    await channel.send({ embeds });
-}
+export async function run(ctx: CommandContext) {
+    await ctx.defer();
+    const { user, mods } = parseCommandArgs(ctx, Mode.OSU);
 
-export async function runApplication({ interaction }: ApplicationCommand) {
-    await interaction.deferReply();
-
-    const { user, mods } = getCommandArgs(interaction);
-
-    const beatmapId = user.beatmapId ?? (await getBeatmapIdFromContext({ channelId: interaction.channelId, client: interaction.client }));
-    const embeds = await getEmbed(beatmapId, interaction.member.user.id, mods);
-    await interaction.editReply({ embeds });
+    const beatmapId = user.beatmapId ?? (await getBeatmapIdFromContext({ 
+        message: ctx.message, 
+        channelId: ctx.channelId, 
+        client: ctx.client 
+    }));
+    
+    const embeds = await getEmbed(beatmapId, ctx.user.id, mods);
+    await ctx.editReply({ embeds });
 }
 
 async function getEmbed(beatmapId: string | number | null, authorId: string, mods: Mods) {

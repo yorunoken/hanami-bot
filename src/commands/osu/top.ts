@@ -2,15 +2,14 @@ import { playBuilder } from "@builders";
 import { MessageReplyOptions } from "@lilybird/transformers";
 import { EmbedBuilderType } from "@type/builders";
 import { SuccessUser, UserType } from "@type/command-args";
-import { CommandData, MessageCommand, ApplicationCommand } from "@type/commands";
+import { CommandData } from "@type/commands";
 import { Mode, PlayType } from "@type/osu";
-import { getCommandArgs, parseOsuArguments } from "@utils/args";
+import { parseCommandArgs } from "@utils/args";
 import { createPaginationActionRow } from "@utils/pagination";
 import { getUserScores } from "@utils/score-api";
 import { client } from "@utils/initialize";
 import { ApplicationCommandOptionType, EmbedType } from "lilybird";
 import type { PlaysBuilderOptions } from "@type/builders";
-import type { Mod } from "osu-web.js";
 
 const modeAliases: Record<string, { mode: Mode }> = {
     t: { mode: Mode.OSU },
@@ -23,59 +22,37 @@ const modeAliases: Record<string, { mode: Mode }> = {
     topcatch: { mode: Mode.FRUITS },
 };
 
-export async function runMessage({ message, args, channel, commandName, index }: MessageCommand & { index?: number }) {
-    const { mode } = modeAliases[commandName];
-    const { user, mods, flags } = parseOsuArguments(message, args, mode);
+import { CommandContext } from "@utils/command-context";
+
+export async function run(ctx: CommandContext) {
+    await ctx.defer();
+
+    const mode = modeAliases[ctx.commandName ?? "top"]?.mode ?? Mode.OSU;
+    const { user, mods, flags } = parseCommandArgs(ctx, mode);
+
     if (user.type === UserType.FAIL) {
-        await channel.send(user.failMessage);
+        await ctx.editReply(user.failMessage);
         return;
     }
 
-    let page = Number(flags.p ?? flags.page) - 1 || undefined;
+    let index = ctx.isInteraction ? ctx.interaction!.data.getInteger("index") : ctx.index;
+    let page = ctx.isInteraction ? ctx.interaction!.data.getInteger("page") : (Number(flags.p ?? flags.page) || undefined);
+
+    if (typeof page === "undefined" && typeof index === "undefined") {
+        page = ctx.isMessage ? 0 : 1;
+    }
+
+    if (page && ctx.isInteraction) page -= 1;
+    if (page && ctx.isMessage) page -= 1; // Standardize to 0-based
+    if (ctx.isMessage && typeof flags.p !== "undefined") page = Number(flags.p) - 1;
+    if (ctx.isMessage && typeof flags.page !== "undefined") page = Number(flags.page) - 1;
+    if (index && ctx.isInteraction) index -= 1;
+
     if (typeof page === "undefined" && typeof index === "undefined") page = 0;
     const isPage = typeof page !== "undefined";
 
-    const reply = await getEmbeds(user, message.author.id, index, page, isPage, mods);
-    await channel.send(reply);
-}
-
-export async function runApplication({ interaction }: ApplicationCommand) {
-    await interaction.deferReply();
-
-    const { user } = getCommandArgs(interaction);
-    if (user.type === UserType.FAIL) {
-        await interaction.editReply(user.failMessage);
-        return;
-    }
-
-    let index = interaction.data.getInteger("index");
-    let page = interaction.data.getInteger("page");
-
-    if (typeof page === "undefined" && typeof index === "undefined") page = 1;
-    if (page) page -= 1;
-    if (index) index -= 1;
-
-    const mod = interaction.data.getString("mods") as Mod;
-    const modsAction = interaction.data.getString("mods_action");
-
-    const mods = { exclude: false, forceInclude: false, include: false, name: mod };
-    switch (modsAction) {
-        case "include":
-            mods.include = true;
-            break;
-        case "force_include":
-            mods.forceInclude = true;
-            break;
-        case "exclude":
-            mods.exclude = true;
-            break;
-        default:
-            mods.include = true;
-    }
-
-    const isPage = typeof page !== "undefined";
-    const reply = await getEmbeds(user, interaction.member.user.id, index, page, isPage, mods);
-    await interaction.editReply(reply);
+    const reply = await getEmbeds(user, ctx.user.id, index, page, isPage, mods);
+    await ctx.editReply(reply);
 }
 
 async function getEmbeds(user: SuccessUser, authorId: string, index: number | undefined, page: number | undefined, isPage: boolean, mods: any): Promise<MessageReplyOptions> {

@@ -1,18 +1,25 @@
 import { simulateBuilder } from "@builders";
 import { MessageReplyOptions } from "@lilybird/transformers";
 import { EmbedBuilderType } from "@type/builders";
-import { CommandData, MessageCommand, ApplicationCommand } from "@type/commands";
+import { CommandData } from "@type/commands";
 import { Mode } from "@type/osu";
-import { getCommandArgs, parseOsuArguments } from "@utils/args";
+import { parseCommandArgs } from "@utils/args";
 import { getBeatmapIdFromContext } from "@utils/osu";
 import { ApplicationCommandOptionType, EmbedType } from "lilybird";
 
-export async function runMessage({ message, args, channel }: MessageCommand) {
-    const { user, mods, flags } = parseOsuArguments(message, args, Mode.OSU);
+import { CommandContext } from "@utils/command-context";
 
-    const beatmapId = user.beatmapId ?? (await getBeatmapIdFromContext({ message, client: message.client }));
+export async function run(ctx: CommandContext) {
+    await ctx.defer();
+    const { user, mods, flags } = parseCommandArgs(ctx, Mode.OSU);
+
+    const context = ctx.isInteraction 
+        ? { channelId: ctx.channelId, client: ctx.client }
+        : { message: ctx.message, client: ctx.client };
+
+    const beatmapId = user.beatmapId ?? (await getBeatmapIdFromContext(context));
     if (!beatmapId) {
-        await channel.send({
+        await ctx.editReply({
             embeds: [
                 {
                     type: EmbedType.Rich,
@@ -24,49 +31,22 @@ export async function runMessage({ message, args, channel }: MessageCommand) {
         return;
     }
 
-    const simulationOptions = {
+    const simulationOptions = ctx.isInteraction ? {
+        mods: ctx.interaction!.data.getString("mods"),
+        combo: ctx.interaction!.data.getNumber("combo") || undefined,
+        accuracy: ctx.interaction!.data.getNumber("acc") || undefined,
+        clockRate: ctx.interaction!.data.getNumber("clock_rate") || undefined,
+        bpm: ctx.interaction!.data.getNumber("bpm") || undefined,
+    } : {
         mods: mods.name,
         combo: Number(flags.combo) || undefined,
         accuracy: Number(flags.acc || flags.accuracy) || undefined,
         clockRate: Number(flags.clock_rate || flags.clockrate) || undefined,
         bpm: Number(flags.bpm) || undefined,
-        // Add other simulation parameters from flags
     };
 
-    const reply = await getEmbeds(String(beatmapId), message.author.id, simulationOptions);
-    await channel.send(reply);
-}
-
-export async function runApplication({ interaction }: ApplicationCommand) {
-    await interaction.deferReply();
-
-    const { user } = getCommandArgs(interaction);
-
-    const beatmapId = user.beatmapId ?? (await getBeatmapIdFromContext({ channelId: interaction.channelId, client: interaction.client }));
-    if (!beatmapId) {
-        await interaction.editReply({
-            embeds: [
-                {
-                    type: EmbedType.Rich,
-                    title: "Uh oh! :x:",
-                    description: "It seems like the beatmap ID couldn't be found :(\n",
-                },
-            ],
-        });
-        return;
-    }
-
-    const simulationOptions = {
-        mods: interaction.data.getString("mods"),
-        combo: interaction.data.getNumber("combo") || undefined,
-        accuracy: interaction.data.getNumber("acc") || undefined,
-        clockRate: interaction.data.getNumber("clock_rate") || undefined,
-        bpm: interaction.data.getNumber("bpm") || undefined,
-        // Add other simulation parameters
-    };
-
-    const reply = await getEmbeds(String(beatmapId), interaction.member.user.id, simulationOptions);
-    await interaction.editReply(reply);
+    const reply = await getEmbeds(String(beatmapId), ctx.user.id, simulationOptions);
+    await ctx.editReply(reply);
 }
 
 async function getEmbeds(beatmapId: string, authorId: string, simulationOptions: any): Promise<MessageReplyOptions> {

@@ -97,8 +97,7 @@ function displayAllCommands(): Array<Embed.Structure> {
     const joinedServers = getRowCount(Tables.GUILD);
     const linkedUsers = getRowCount(Tables.USER);
     const downloadedMaps = getRowCount(Tables.MAP);
-    const usedPrefixCommands = getRowSum(Tables.COMMAND);
-    const usedApplicationCommands = getRowSum(Tables.COMMAND_SLASH);
+    const usedCommands = getRowSum(Tables.COMMAND);
 
     const allCommands = Array.from(commandsCache.keys()).sort();
 
@@ -185,7 +184,7 @@ function displayAllCommands(): Array<Embed.Structure> {
 
     fields.push({
         name: "Bot Statistics",
-        value: `**Servers:** \`${joinedServers}\`\n**Linked Users:** \`${linkedUsers}\`\n**Maps in Database:** \`${downloadedMaps}\`\n**Commands Used:** \`${usedPrefixCommands + usedApplicationCommands}\``,
+        value: `**Servers:** \`${joinedServers}\`\n**Linked Users:** \`${linkedUsers}\`\n**Maps in Database:** \`${downloadedMaps}\`\n**Commands Used:** \`${usedCommands}\``,
         inline: false,
     });
 

@@ -3,7 +3,7 @@ import { DEFAULT_PREFIX, MAX_AMOUNT_OF_PREFIXES } from "@utils/constants";
 import { guildPrefixesCache } from "@utils/cache";
 import { Tables } from "@type/database";
 import type { ApplicationCommandData, GuildInteraction } from "@lilybird/transformers";
-import { CommandData, ApplicationCommand } from "@type/commands";
+import { CommandData } from "@type/commands";
 import { ApplicationCommandOptionType, PermissionFlags, EmbedType } from "lilybird";
 
 const commands: Record<string, ({ prefix, interaction, guildId }: { prefix?: string; interaction: GuildInteraction<ApplicationCommandData>; guildId: string }) => Promise<void>> = {
@@ -21,8 +21,13 @@ const PERMISSIONS_NEEDED_INT = PermissionFlags.MANAGE_GUILD;
 const PERMISSIONS_NEEDED = PermissionNames[Number(PERMISSIONS_NEEDED_INT)];
 const PERMISSION_NEEDED_STRING = `Looks like you don't have the necessary permissions for this command. Permission(s) needed: \`${PERMISSIONS_NEEDED}\``;
 
-export async function runApplication({ interaction }: ApplicationCommand) {
-    await interaction.deferReply();
+import { CommandContext } from "@utils/command-context";
+
+export async function run(ctx: CommandContext) {
+    await ctx.defer();
+
+    const { interaction } = ctx;
+    if (!interaction) return;
 
     const subcommand = interaction.data.subCommand ?? "list";
     const prefix = interaction.data.getString("prefix");
