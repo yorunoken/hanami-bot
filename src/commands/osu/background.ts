@@ -3,7 +3,7 @@ import { EmbedBuilderType } from "@type/builders";
 import { CommandData, MessageCommand, ApplicationCommand } from "@type/commands";
 import { Mode } from "@type/osu";
 import { getCommandArgs, parseOsuArguments } from "@utils/args";
-import { client } from "@utils/initalize";
+import { client } from "@utils/initialize";
 import { getBeatmapIdFromContext } from "@utils/osu";
 import { ApplicationCommandOptionType, EmbedType } from "lilybird";
 

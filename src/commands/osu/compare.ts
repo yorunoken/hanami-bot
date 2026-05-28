@@ -9,7 +9,7 @@ import { getBeatmapIdFromContext } from "@utils/osu";
 import { getBeatmapUserScores } from "@utils/score-api";
 import { createPaginationActionRow } from "@utils/pagination";
 import { ButtonStateCache } from "@utils/cache";
-import { client } from "@utils/initalize";
+import { client } from "@utils/initialize";
 import { ApplicationCommandOptionType, EmbedType } from "lilybird";
 
 const modeAliases: Record<string, { mode: Mode }> = {

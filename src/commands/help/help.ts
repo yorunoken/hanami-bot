@@ -1,5 +1,6 @@
 import { CommandData, MessageCommand, ApplicationCommand } from "@type/commands";
 import { ApplicationCommandOptionType } from "lilybird";
+import { helpBuilder } from "@builders";
 
 export async function runMessage({ message, args }: MessageCommand) {
     await message.reply({ embeds: helpBuilder(args[0]) });

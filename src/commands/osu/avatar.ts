@@ -4,7 +4,7 @@ import { SuccessUser, UserType } from "@type/command-args";
 import { CommandData, MessageCommand, ApplicationCommand } from "@type/commands";
 import { Mode } from "@type/osu";
 import { getCommandArgs, parseOsuArguments } from "@utils/args";
-import { client } from "@utils/initalize";
+import { client } from "@utils/initialize";
 import { ApplicationCommandOptionType, EmbedType } from "lilybird";
 
 export async function runMessage({ message, args, channel }: MessageCommand) {

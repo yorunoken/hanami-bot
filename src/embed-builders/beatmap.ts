@@ -1,4 +1,4 @@
-import { client } from "@utils/initalize";
+import { client } from "@utils/initialize";
 import { downloadBeatmap, getPerformanceResults } from "@utils/osu";
 import { getEntry } from "@utils/database";
 import { rulesets } from "@utils/constants";

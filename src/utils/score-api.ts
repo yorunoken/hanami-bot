@@ -1,4 +1,4 @@
-import { client } from "@utils/initalize";
+import { client } from "@utils/initialize";
 import { type User, ScoreData } from "@type/database";
 import type { UserScore, UserBestScore, UserScoreV2, UserBestScoreV2, Score, ScoreV2, PlayType, Mode } from "@type/osu";
 

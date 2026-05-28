@@ -1,4 +1,4 @@
-import { loadCommands, refreshGuildsDatabase, loadGuildPrefixes } from "@utils/initalize";
+import { loadCommands, refreshGuildsDatabase, loadGuildPrefixes } from "@utils/initialize";
 import { logger } from "@utils/logger";
 import type { Event } from "@lilybird/handlers";
 

@@ -7,7 +7,7 @@ import { Mode, PlayType } from "@type/osu";
 import { getCommandArgs, parseOsuArguments } from "@utils/args";
 import { createPaginationActionRow } from "@utils/pagination";
 import { getUserScores } from "@utils/score-api";
-import { client } from "@utils/initalize";
+import { client } from "@utils/initialize";
 import { ApplicationCommandOptionType, EmbedType } from "lilybird";
 import type { PlaysBuilderOptions } from "@type/builders";
 import type { Mod } from "osu-web.js";

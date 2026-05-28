@@ -10,7 +10,7 @@ import type { Score as ScoreDatabase } from "@type/database";
 import type { Message } from "@lilybird/transformers";
 import type { Mod } from "@type/mods";
 import type { UserScore, UserBestScore, UserScoreV2, UserBestScoreV2, ScoreV2, AccessTokenJSON, AuthScope, LeaderboardScoresRaw, PerformanceInfo, Score, LeaderboardScore } from "@type/osu";
-import type { LilyClient, Embed } from "lilybird";
+import type { Client, Embed } from "lilybird";
 import type { GameMode, Mod as ModOsuWeb, Rank, Beatmap as BeatmapWeb, ScoreStatistics } from "osu-web.js";
 
 export async function getAccessToken(
@@ -542,7 +542,7 @@ function getEmbedFromReply(message: Message): number | null {
     return Number(foundId) || null;
 }
 
-async function cycleThroughEmbeds({ client, message, channelId }: { message?: Message; channelId?: string; client: LilyClient }): Promise<number | null> {
+async function cycleThroughEmbeds({ client, message, channelId }: { message?: Message; channelId?: string; client: Client }): Promise<number | null> {
     const channel = await client.rest.getChannel(message?.channelId ?? channelId ?? "");
     if (!channel.id || channel.type !== ChannelType.GUILD_TEXT) {
         return null;
@@ -560,7 +560,7 @@ async function cycleThroughEmbeds({ client, message, channelId }: { message?: Me
     return beatmapId;
 }
 
-export async function getBeatmapIdFromContext({ client, message, channelId }: { message?: Message; client: LilyClient; channelId?: string }): Promise<number | null> {
+export async function getBeatmapIdFromContext({ client, message, channelId }: { message?: Message; client: Client; channelId?: string }): Promise<number | null> {
     return typeof message?.referencedMessage !== "undefined" ? getEmbedFromReply(message) : cycleThroughEmbeds({ message, client, channelId });
 }
 

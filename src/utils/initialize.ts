@@ -8,7 +8,7 @@ import { Client as OsuClient } from "osu-web.js";
 import { readdir } from "fs/promises";
 import type { Guild } from "@type/database";
 import type { CommandFileData } from "@type/commands";
-import { LilyClient, ApplicationCommand } from "lilybird";
+import { Client, ApplicationCommand } from "lilybird";
 
 const tokenResult = await getAccessToken(+process.env.OSU_CLIENT_ID, process.env.OSU_CLIENT_SECRET, ["public"]);
 if (!tokenResult) {
@@ -17,7 +17,7 @@ if (!tokenResult) {
 const { accessToken } = tokenResult;
 export const client = new OsuClient(accessToken);
 
-export async function loadCommands(lilyClient: LilyClient): Promise<void> {
+export async function loadCommands(lilyClient: Client): Promise<void> {
     // temp array to store promises
     const commandDataPromises: Array<Promise<CommandFileData>> = [];
     const applicationCommands: Array<ApplicationCommand.Create.ApplicationCommandJSONParams> = [];

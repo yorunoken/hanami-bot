@@ -1,4 +1,4 @@
-import { initializeDatabase, client } from "@utils/initalize";
+import { initializeDatabase, client } from "@utils/initialize";
 import { logger } from "@utils/logger";
 import { getAccessToken } from "@utils/osu";
 import { initializeRedis, closeRedis } from "@utils/cache";
@@ -63,7 +63,7 @@ const listeners = await createHandler({
     },
 });
 
-// I'll need to upgrade to the latest version soon enough.
+
 await createClient({
     token: process.env.DISCORD_BOT_TOKEN,
     caching: {

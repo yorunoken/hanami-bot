@@ -1,5 +1,5 @@
 import type { ApplicationCommandData, GuildInteraction, GuildTextChannel, Message } from "@lilybird/transformers";
-import type { LilyClient, ApplicationCommand } from "lilybird";
+import type { Client, ApplicationCommand } from "lilybird";
 
 type Awaitable<T> = Promise<T> | T;
 
@@ -20,7 +20,7 @@ export interface CommandData {
 }
 
 export interface MessageCommand {
-    client: LilyClient;
+    client: Client;
     message: Message;
     args: Array<string>;
     prefix: string;

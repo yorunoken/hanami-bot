@@ -7,7 +7,7 @@ import { getCommandArgs, parseOsuArguments } from "@utils/args";
 import { getBeatmapIdFromContext, getBeatmapTopScores } from "@utils/osu";
 import { createPaginationActionRow } from "@utils/pagination";
 import { ButtonStateCache } from "@utils/cache";
-import { client } from "@utils/initalize";
+import { client } from "@utils/initialize";
 import { ApplicationCommandOptionType, EmbedType } from "lilybird";
 import type { LeaderboardBuilderOptions } from "@type/builders";
 import type { Mod } from "osu-web.js";

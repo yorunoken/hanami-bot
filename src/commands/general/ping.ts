@@ -1,5 +1,5 @@
 import { CommandData, MessageCommand, ApplicationCommand } from "@type/commands";
-import { client } from "@utils/initalize";
+import { client } from "@utils/initialize";
 
 export async function runMessage({ message }: MessageCommand) {
     const newMessage = await message.reply({
