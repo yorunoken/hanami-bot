@@ -29,9 +29,6 @@ function withPerfMonitoring<T>(operation: string, fn: () => T): T {
     return result;
 }
 
-export function query(str: string): unknown {
-    return withPerfMonitoring(`query: ${str.substring(0, 50)}...`, () => getPreparedStatement(str).all());
-}
 
 export function getEntry<T extends Tables>(table: T, id: string | number): TableToType<T> | null {
     return withPerfMonitoring(`getEntry: ${table}`, () => {

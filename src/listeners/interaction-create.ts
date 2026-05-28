@@ -37,10 +37,6 @@ async function run(interaction: Interaction): Promise<void> {
                 command: command.data.name,
                 subCommand: interaction.data.subCommand,
             });
-
-            const docs = getEntry(Tables.COMMAND_SLASH, interaction.data.name);
-            if (docs === null) insertData({ table: Tables.COMMAND_SLASH, data: [{ key: "count", value: 1 }], id: command.data.name });
-            else insertData({ table: Tables.COMMAND_SLASH, data: [{ key: "count", value: Number(docs.count ?? 0) + 1 }], id: docs.id });
         } catch (error) {
             const err = error as Error;
 
@@ -80,7 +76,7 @@ async function run(interaction: Interaction): Promise<void> {
                 command: command.data.name,
                 subCommand: interaction.data.subCommand,
             });
-
+        } finally {
             const docs = getEntry(Tables.COMMAND_SLASH, interaction.data.name);
             if (docs === null) insertData({ table: Tables.COMMAND_SLASH, data: [{ key: "count", value: 1 }], id: command.data.name });
             else insertData({ table: Tables.COMMAND_SLASH, data: [{ key: "count", value: Number(docs.count ?? 0) + 1 }], id: docs.id });

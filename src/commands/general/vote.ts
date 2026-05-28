@@ -12,7 +12,7 @@ export async function runApplication({ interaction }: ApplicationCommand) {
 }
 
 export const data = {
-    name: "example",
+    name: "vote",
     description: "Vote for the bot.",
     hasPrefixVariant: true,
 } satisfies CommandData;

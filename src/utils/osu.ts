@@ -46,7 +46,7 @@ export async function getAccessToken(
     return { accessToken: data.access_token, expiresIn: data.expires_in };
 }
 
-export function getModsEnum(mods: Array<ModOsuWeb>, derivativeModsWithOriginal?: boolean): number {
+function getModsEnum(mods: Array<ModOsuWeb>, derivativeModsWithOriginal?: boolean): number {
     return mods.reduce((count, mod) => {
         if (
             !["NF", "EZ", "TD", "HD", "HR", "SD", "DT", "RX", "HT", "NC", "FL", "AT", "SO", "AP", "PF", "4K", "5K", "6K", "7K", "8K", "FI", "RD", "CN", "TP", "K9", "KC", "1K", "2K", "3K", "SV2", "MR"].includes(
@@ -322,20 +322,6 @@ export function gradeCalculator(
 
     switch (mode) {
         case Mode.OSU:
-            total = n300 + n100 + n50 + nMiss;
-
-            r300 = n300 / total;
-            r50 = n50 / total;
-
-            if (r300 === 1) rank = silver ? "SSH" : "SS";
-            else if (r300 > 0.9 && r50 < 0.01 && nMiss === 0) rank = silver ? "SH" : "S";
-            else if ((r300 > 0.8 && nMiss === 0) || r300 > 0.9) rank = "A";
-            else if ((r300 > 0.7 && nMiss === 0) || r300 > 0.8) rank = "B";
-            else if (r300 > 0.6) rank = "C";
-            else rank = "D";
-
-            break;
-
         case Mode.TAIKO:
             total = n300 + n100 + n50 + nMiss;
 
@@ -434,8 +420,7 @@ function saveScore(
 } {
     let beatmap;
     if (mapTemp) {
-        const { ...rest } = mapTemp;
-        beatmap = { ...rest };
+        beatmap = mapTemp;
     } else {
         const { beatmap: map } = play as UserBestScore | UserScore;
         beatmap = map;
@@ -565,9 +550,5 @@ export async function getBeatmapIdFromContext({ client, message, channelId }: { 
 }
 
 export function getRetryCount(beatmapIds: Array<number>, mapId: number): number {
-    let retryCounter = 0;
-    for (const beatmap of beatmapIds) {
-        if (beatmap === mapId) retryCounter++;
-    }
-    return retryCounter;
+    return beatmapIds.filter(id => id === mapId).length;
 }

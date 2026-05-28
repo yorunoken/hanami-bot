@@ -9,7 +9,7 @@ export enum LogLevel {
     FATAL = 4,
 }
 
-export interface LogEntry {
+interface LogEntry {
     timestamp: string;
     level: LogLevel;
     message: string;
@@ -17,7 +17,7 @@ export interface LogEntry {
     error?: Error;
 }
 
-export interface LoggerConfig {
+interface LoggerConfig {
     level: LogLevel;
     logDir: string;
     maxFiles: number;
@@ -46,37 +46,13 @@ class Logger {
     }
 
     private getLevelName(level: LogLevel): string {
-        switch (level) {
-            case LogLevel.DEBUG:
-                return "DEBUG";
-            case LogLevel.INFO:
-                return "INFO";
-            case LogLevel.WARN:
-                return "WARN";
-            case LogLevel.ERROR:
-                return "ERROR";
-            case LogLevel.FATAL:
-                return "FATAL";
-            default:
-                return "UNKNOWN";
-        }
+        const names = ["DEBUG", "INFO", "WARN", "ERROR", "FATAL"];
+        return names[level] ?? "UNKNOWN";
     }
 
     private getColorCode(level: LogLevel): string {
-        switch (level) {
-            case LogLevel.DEBUG:
-                return "\x1b[36m"; // Cyan
-            case LogLevel.INFO:
-                return "\x1b[32m"; // Green
-            case LogLevel.WARN:
-                return "\x1b[33m"; // Yellow
-            case LogLevel.ERROR:
-                return "\x1b[31m"; // Red
-            case LogLevel.FATAL:
-                return "\x1b[35m"; // Magenta
-            default:
-                return "\x1b[0m"; // Reset
-        }
+        const colors = ["\x1b[36m", "\x1b[32m", "\x1b[33m", "\x1b[31m", "\x1b[35m"];
+        return colors[level] ?? "\x1b[0m";
     }
 
     private formatTimestamp(): string {
@@ -218,10 +194,6 @@ class Logger {
         return this.log(LogLevel.FATAL, message, context, error);
     }
 
-    async cleanup(): Promise<void> {
-        await this.cleanOldLogs();
-    }
-
     // Flush any pending writes
     async flush(): Promise<void> {
         while (this.writeQueue.length > 0 || this.isWriting) {
@@ -231,11 +203,3 @@ class Logger {
 }
 
 export const logger = new Logger();
-
-export function createLogger(name: string, config?: Partial<LoggerConfig>): Logger {
-    const loggerConfig = {
-        ...config,
-        logDir: join(config?.logDir || "./logs", name),
-    };
-    return new Logger(loggerConfig);
-}

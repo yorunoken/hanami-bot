@@ -30,9 +30,8 @@ process.on("uncaughtException", async (error: Error) => {
     await logger.fatal("Uncaught exception", error);
 });
 
-// graceful shutdown
-process.on("SIGINT", async () => {
-    logger.info("Received SIGINT, shutting down gracefully...");
+async function gracefulShutdown(signal: string) {
+    logger.info(`Received ${signal}, shutting down gracefully...`);
     try {
         await closeRedis();
         await logger.flush();
@@ -41,19 +40,10 @@ process.on("SIGINT", async () => {
         logger.error("Error during shutdown", error as Error);
         process.exit(1);
     }
-});
+}
 
-process.on("SIGTERM", async () => {
-    logger.info("Received SIGTERM, shutting down gracefully...");
-    try {
-        await closeRedis();
-        await logger.flush();
-        process.exit(0);
-    } catch (error) {
-        logger.error("Error during shutdown", error as Error);
-        process.exit(1);
-    }
-});
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 
 initializeDatabase();
 

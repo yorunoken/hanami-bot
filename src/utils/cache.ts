@@ -62,21 +62,21 @@ export async function initializeRedis(): Promise<void> {
     }
 }
 
-export function isRedisAvailable(): boolean {
+function isRedisAvailable(): boolean {
     return redisClient && redisClient.isOpen;
 }
 
-export const CacheKeys = {
+const CacheKeys = {
     BUTTON_STATE: (messageId: string) => `button:${messageId}:state`,
     STATE_DISCORD: (state: string) => `state:${state}`,
 } as const;
 
-export const CacheTTL = {
+const CacheTTL = {
     BUTTON_STATE: 3600, // 1 hour
     STATE_DISCORD: 600, // 10 minutes
 } as const;
 
-export class RedisCache {
+class RedisCache {
     static async get<T>(key: string): Promise<T | null> {
         if (!isRedisAvailable()) {
             throw new Error(`Redis is not available for GET operation on key: ${key}`);
@@ -137,37 +137,6 @@ export class RedisCache {
             throw error;
         }
     }
-
-    static async increment(key: string, ttl?: number): Promise<number> {
-        if (!isRedisAvailable()) {
-            throw new Error(`Redis is not available for INCR operation on key: ${key}`);
-        }
-
-        try {
-            const result = await redisClient.incr(key);
-            if (ttl && result === 1) {
-                await redisClient.expire(key, ttl);
-            }
-            return result;
-        } catch (error) {
-            logger.error(`Redis INCR error for key ${key}`, error as Error);
-            throw error;
-        }
-    }
-
-    static async setTTL(key: string, ttl: number): Promise<boolean> {
-        if (!isRedisAvailable()) {
-            throw new Error(`Redis is not available for EXPIRE operation on key: ${key}`);
-        }
-
-        try {
-            await redisClient.expire(key, ttl);
-            return true;
-        } catch (error) {
-            logger.error(`Redis EXPIRE error for key ${key}`, error as Error);
-            throw error;
-        }
-    }
 }
 
 // Specialized cache classes for different data types
@@ -178,10 +147,6 @@ export class ButtonStateCache {
 
     static async set<T>(messageId: string, value: T): Promise<boolean> {
         return RedisCache.set(CacheKeys.BUTTON_STATE(messageId), value, CacheTTL.BUTTON_STATE);
-    }
-
-    static async del(messageId: string): Promise<boolean> {
-        return RedisCache.del(CacheKeys.BUTTON_STATE(messageId));
     }
 }
 
@@ -196,10 +161,6 @@ export class StateCache {
 
     static async del(state: string): Promise<boolean> {
         return RedisCache.del(CacheKeys.STATE_DISCORD(state));
-    }
-
-    static async exists(state: string): Promise<boolean> {
-        return RedisCache.exists(CacheKeys.STATE_DISCORD(state));
     }
 }
 

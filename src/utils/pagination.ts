@@ -16,14 +16,7 @@ export enum PaginationAction {
     LAST = "last",
 }
 
-export interface PaginationState {
-    currentPage: number;
-    currentIndex: number;
-    totalItems: number;
-    type: PaginationType;
-}
-
-export interface PaginationConfig {
+interface PaginationConfig {
     type: PaginationType;
     totalItems: number;
     currentValue: number;
@@ -73,23 +66,19 @@ export class PaginationManager {
     }
 
     static parseButtonAction(buttonId: string): { type: PaginationType; action: PaginationAction } | null {
-        const patterns = [{ regex: /^(min|max|increment|decrement)-(page|index)$/, groups: ["action", "type"] }];
+        const match = buttonId.match(/^(min|max|increment|decrement)-(page|index)$/);
+        if (match) {
+            const actionMap: Record<string, PaginationAction> = {
+                min: PaginationAction.FIRST,
+                decrement: PaginationAction.PREV,
+                increment: PaginationAction.NEXT,
+                max: PaginationAction.LAST,
+            };
 
-        for (const pattern of patterns) {
-            const match = buttonId.match(pattern.regex);
-            if (match) {
-                const actionMap: Record<string, PaginationAction> = {
-                    min: PaginationAction.FIRST,
-                    decrement: PaginationAction.PREV,
-                    increment: PaginationAction.NEXT,
-                    max: PaginationAction.LAST,
-                };
+            const type = match[2] === "page" ? PaginationType.PAGE : PaginationType.INDEX;
+            const action = actionMap[match[1]];
 
-                const type = match[2] === "page" ? PaginationType.PAGE : PaginationType.INDEX;
-                const action = actionMap[match[1]];
-
-                return { type, action };
-            }
+            return { type, action };
         }
 
         return null;

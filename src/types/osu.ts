@@ -202,9 +202,6 @@ export interface UserScoreV2 extends Omit<UserScoreV2_, "statistics"> {
     position: number;
 }
 
-export interface UserBestScore extends UserBestScore_ {
-    position: number;
-}
 
 export interface UserBestScoreV2 extends Omit<UserBestScoreV2_, "statistics"> {
     statistics: ScoreStatisticsV2;

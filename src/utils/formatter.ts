@@ -5,16 +5,6 @@ import { Tables } from "@type/database";
 import type { Mode, UserScore, Beatmap, LeaderboardScore, ScoresInfo, Score, UserBestScore, UserBestScoreV2, UserScoreV2, ScoreV2, ProfileInfo } from "@type/osu";
 import type { ISOTimestamp, ScoreStatistics, UserExtended } from "osu-web.js";
 
-// We won't be needing this either!
-// interface HitValues {
-//     h320: null | number;
-//     h300: null | number;
-//     h200: null | number;
-//     h100: null | number;
-//     h50: null | number;
-//     hMiss: null | number;
-// }
-
 export async function getFormattedScore({
     scores,
     beatmap: map_,
@@ -121,30 +111,6 @@ export async function getFormattedScore({
         );
     }
 
-    // We won't be needing this anymore, since osu! API now returns _null_ if the statistic key is not a part of the gamemode!
-    // I'm not deleting the code in case I need it in the future if they decide to revert.
-    // const hitValues: HitValues = {
-    //     h320: null,
-    //     h300: null,
-    //     h200: null,
-    //     h100: null,
-    //     h50: null,
-    //     hMiss: null
-    // };
-
-    // const modeMappings: Record<string, Array<keyof HitValues>> = {
-    //     osu: ["h300", "h100", "h50", "hMiss"],
-    //     mania: ["h320", "h300", "h200", "h100", "h50", "hMiss"],
-    //     taiko: ["h300", "h100", "hMiss"],
-    //     fruits: ["h300", "h100", "hMiss"]
-    // };
-
-    // const modeKeys = modeMappings[mode];
-    // modeKeys.forEach((key) => {
-    //     const countKey = `count_${key.slice(1)}` as keyof typeof statistics;
-    //     hitValues[key] = statistics[countKey];
-    // });
-
     const hitValues = hitValueCalculator(mode, scoreStatistics);
 
     const playMaxCombo = play.max_combo;
@@ -225,7 +191,7 @@ export async function getFormattedScore({
         stars: `${current.difficulty.stars.toFixed(2).toLocaleString()}★`,
         rulesetEmote: rulesets[mode],
         pp: current.pp,
-        ppFormatted: `**${current.pp.toFixed(2).toLocaleString()}**/${perfect.pp.toFixed(2).toLocaleLowerCase()}pp`,
+        ppFormatted: `**${current.pp.toFixed(2).toLocaleString()}**/${perfect.pp.toFixed(2).toLocaleString()}pp`,
         playSubmitted: `<t:${new Date(createdAt).getTime() / 1000}:R>`,
         ifFcHanami,
         ifFcBathbot,

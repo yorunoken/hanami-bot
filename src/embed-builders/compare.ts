@@ -1,5 +1,4 @@
-import { getFormattedProfile } from "@utils/formatter";
-import { getFormattedScore } from "@utils/formatter";
+import { getFormattedProfile, getFormattedScore } from "@utils/formatter";
 import { SPACE } from "@utils/constants";
 import { getEntry } from "@utils/database";
 import { downloadBeatmap, saveScoreDatas } from "@utils/osu";

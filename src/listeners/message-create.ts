@@ -2,7 +2,6 @@ import { DEFAULT_PREFIX, wysiEmoji } from "@utils/constants";
 import { commandAliasesCache, commandsCache } from "@utils/cache";
 import { logger } from "@utils/logger";
 import { getEntry, insertData } from "@utils/database";
-import { fuzzySearch } from "@utils/fuzzy";
 import { Tables } from "@type/database";
 import { EmbedType } from "lilybird";
 import type { Message } from "@lilybird/transformers";
@@ -16,6 +15,7 @@ export default {
 } satisfies Event<"messageCreate">;
 
 const CHANCE_TO_SEND_CUTE_KITTY_CAT_I_LOVE_CATS = 0.2;
+
 async function run(message: Message): Promise<void> {
     const { content, guildId, client, author } = message;
     if (!content || !guildId || author.bot) return;
@@ -40,7 +40,6 @@ async function run(message: Message): Promise<void> {
         const wysiArr = ["727", "7,27", "72,7", "72.7", "7.27", "wysi"];
         if (wysiArr.some((wysi) => content.toLowerCase() === wysi)) {
             await message.react(wysiEmoji, true);
-            return;
         }
         return;
     }
@@ -60,20 +59,7 @@ async function run(message: Message): Promise<void> {
     const alias = commandAliasesCache.get(commandName);
     const command = alias ? commandsCache.get(alias) : commandsCache.get(commandName);
 
-    if (!command) {
-        const possibleCommands = Array.from(commandsCache.values()).map((command) => command.data.name);
-        const options = fuzzySearch(commandName, possibleCommands);
-
-        const nearResults = options
-            .filter((option) => option.distance <= 2)
-            .map((option) => option.option)
-            .join(", ");
-
-        if (nearResults === "") return;
-
-        await message.reply(`It seems like ${commandName} is not a command. Did you mean: \`${nearResults}\`?`, { allowed_mentions: { replied_user: false, parse: [], roles: [], users: [] } });
-        return;
-    }
+    if (!command) return; // Removed fuzzy matching
 
     const { data } = command;
 
@@ -81,24 +67,21 @@ async function run(message: Message): Promise<void> {
     const cooldownExpiry = cooldownsCache.get(`${data.name}:${author.id}`);
     if (cooldownExpiry && cooldownExpiry > Date.now()) {
         const remainingTime = cooldownExpiry - Date.now();
-
-        if (remainingTime > 0) {
-            try {
-                const sentMessage = await message.reply({
-                    content: `Please wait \`${remainingTime}ms\` before executing this command again`,
-                });
-                setTimeout(async () => {
-                    try {
-                        await sentMessage.delete();
-                    } catch (deleteError) {
-                        logger.warn("Could not delete cooldown message", { messageId: sentMessage.id, error: deleteError });
-                    }
-                }, 1000);
-            } catch (replyError) {
-                logger.warn("Could not send cooldown message", { error: replyError });
-            }
-            return;
+        try {
+            const sentMessage = await message.reply({
+                content: `Please wait \`${remainingTime}ms\` before executing this command again`,
+            });
+            setTimeout(async () => {
+                try {
+                    await sentMessage.delete();
+                } catch (deleteError) {
+                    logger.warn("Could not delete cooldown message", { messageId: sentMessage.id, error: deleteError });
+                }
+            }, 1000);
+        } catch (replyError) {
+            logger.warn("Could not send cooldown message", { error: replyError });
         }
+        return;
     }
 
     // return simple deprecation notice.
@@ -126,10 +109,6 @@ async function run(message: Message): Promise<void> {
             command: data.name,
             prefix: chosenPrefix,
         });
-        const docs = getEntry(Tables.COMMAND, data.name);
-
-        if (docs === null) insertData({ table: Tables.COMMAND, data: [{ key: "count", value: 1 }], id: data.name });
-        else insertData({ table: Tables.COMMAND, data: [{ key: "count", value: Number(docs.count ?? 0) + 1 }], id: docs.id });
     } catch (error) {
         // handle errors
         const err = error as Error;
@@ -176,8 +155,8 @@ async function run(message: Message): Promise<void> {
             command: data.name,
             prefix: chosenPrefix,
         });
+    } finally {
         const docs = getEntry(Tables.COMMAND, data.name);
-
         if (docs === null) insertData({ table: Tables.COMMAND, data: [{ key: "count", value: 1 }], id: data.name });
         else insertData({ table: Tables.COMMAND, data: [{ key: "count", value: Number(docs.count ?? 0) + 1 }], id: docs.id });
     }

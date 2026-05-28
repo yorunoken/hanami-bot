@@ -13,22 +13,18 @@ export async function getUserScores(
     options: { query: { mode: Mode; limit: number; include_fails?: boolean } },
     authorDb: User | null,
 ): Promise<Array<UserBestScoreV2 | UserScoreV2 | UserBestScore | UserScore>> {
-    if (shouldUseLazerApi(authorDb)) {
-        const scores = (await client.users.getUserScoresV2(userId, type, options)) as unknown as Array<UserBestScoreV2 | UserScoreV2>;
-        return scores.map((score, index) => ({ ...score, position: index + 1 }));
-    } else {
-        const scores = await client.users.getUserScores(userId, type, options);
-        return scores.map((score, index) => ({ ...score, position: index + 1 }));
-    }
+    const scores = shouldUseLazerApi(authorDb)
+        ? ((await client.users.getUserScoresV2(userId, type, options)) as unknown as Array<UserBestScoreV2 | UserScoreV2>)
+        : await client.users.getUserScores(userId, type, options);
+
+    return scores.map((score, index) => ({ ...score, position: index + 1 }));
 }
 
 // Gets beatmap user scores using either V1 (stable) or V2 (lazer) API based on user preference
 export async function getBeatmapUserScores(beatmapId: number, userId: number, options: { query: { mode: Mode } }, authorDb: User | null): Promise<Array<Score | ScoreV2>> {
-    if (shouldUseLazerApi(authorDb)) {
-        const scores = (await client.beatmaps.getBeatmapUserScoresV2(beatmapId, userId, options)) as unknown as Array<ScoreV2>;
-        return scores.map((score, index) => ({ ...score, position: index + 1 }));
-    } else {
-        const scores = await client.beatmaps.getBeatmapUserScores(beatmapId, userId, options);
-        return scores.map((score, index) => ({ ...score, position: index + 1 }));
-    }
+    const scores = shouldUseLazerApi(authorDb)
+        ? ((await client.beatmaps.getBeatmapUserScoresV2(beatmapId, userId, options)) as unknown as Array<ScoreV2>)
+        : await client.beatmaps.getBeatmapUserScores(beatmapId, userId, options);
+
+    return scores.map((score, index) => ({ ...score, position: index + 1 }));
 }

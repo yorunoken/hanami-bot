@@ -33,7 +33,7 @@ function parseURL(url: string): BeatMapSetURL | BeatMapURL | null {
         return {
             url,
             id: url.substring(index + 2),
-        } satisfies BeatMapURL;
+        };
     }
 
     if (!url.startsWith(name, index)) return null;
@@ -49,7 +49,7 @@ function parseURL(url: string): BeatMapSetURL | BeatMapURL | null {
                 setId: subUrl,
                 gameMode: null,
                 difficultyId: null,
-            } satisfies BeatMapSetURL;
+            };
         }
 
         return {
@@ -57,7 +57,7 @@ function parseURL(url: string): BeatMapSetURL | BeatMapURL | null {
             setId: subUrl.substring(0, hash),
             gameMode: subUrl.substring(hash + 1),
             difficultyId: null,
-        } satisfies BeatMapSetURL;
+        };
     }
 
     return {
@@ -65,18 +65,14 @@ function parseURL(url: string): BeatMapSetURL | BeatMapURL | null {
         setId: subUrl.substring(0, hash),
         gameMode: subUrl.substring(hash + 1, slash),
         difficultyId: subUrl.substring(slash + 1),
-    } satisfies BeatMapSetURL;
-}
-
-function linkCommand(): string | undefined {
-    return slashCommandIdsCache.get("link");
+    };
 }
 
 export function getCommandArgs(interaction: GuildInteraction<ApplicationCommandData>, getAttributes?: boolean): SlashCommandArgs {
     const { data, member } = interaction;
 
     // This is so fucking annoying holy shit I can't get it right
-    let difficultySettings = getAttributes ? ({} as DifficultyOptions) : undefined;
+    let difficultySettings: DifficultyOptions | undefined;
     if (getAttributes === true) {
         const attributes: Array<keyof DifficultyOptions> = ["combo", "acc", "clock_rate", "bpm", "n300", "n100", "n50", "nmisses", "ngeki", "nkatu", "ar", "cs", "od"];
         difficultySettings = {} as DifficultyOptions;
@@ -122,7 +118,7 @@ export function getCommandArgs(interaction: GuildInteraction<ApplicationCommandD
                   type: UserType.FAIL,
                   beatmapId,
                   authorDb: userAuthor,
-                  failMessage: discordUserId ? `The user <@${discordUserId}> hasn't linked their account to the bot yet!` : `Please link your account to the bot using ${linkCommand()}!`,
+                  failMessage: discordUserId ? `The user <@${discordUserId}> hasn't linked their account to the bot yet!` : `Please link your account to the bot using ${slashCommandIdsCache.get("link")}!`,
               }
         : userArg
           ? { type: UserType.SUCCESS, banchoId: userArg, mode, beatmapId, authorDb: userAuthor }
@@ -139,7 +135,7 @@ export function parseOsuArguments(message: Message, args: Array<string>, mode: M
         user: {
             beatmapId: null,
             type: UserType.FAIL,
-            failMessage: `Please link your account to the bot using ${linkCommand()}!`,
+            failMessage: `Please link your account to the bot using ${slashCommandIdsCache.get("link")}!`,
             authorDb: null,
         },
         flags: {},
