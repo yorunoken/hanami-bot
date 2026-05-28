@@ -7,10 +7,11 @@ import { createPaginationActionRow } from "@utils/pagination";
 import { PaginationManager } from "@utils/pagination";
 import { Tables } from "@type/database";
 import { leaderboardBuilder, playBuilder, compareBuilder } from "@builders";
-import { EmbedType } from "lilybird";
 import type { Interaction, InteractionReplyOptions } from "@lilybird/transformers";
 import type { Event } from "@lilybird/handlers";
 import type { EmbedBuilderOptions } from "@type/builders";
+import { handleCommandError } from "@utils/error";
+import { CommandContext } from "@utils/command-context";
 
 export default {
     event: "interactionCreate",
@@ -27,7 +28,15 @@ async function run(interaction: Interaction): Promise<void> {
         if (!command) return;
 
         try {
-            await command.runApplication({ interaction });
+            if (command.run) {
+                const ctx = new CommandContext(interaction.client, interaction, undefined, [], undefined, command.data.name);
+                await command.run(ctx);
+            } else if (command.runApplication) {
+                await command.runApplication({ interaction });
+            } else {
+                return; // Command has no valid execution function
+            }
+
             const guild = await interaction.client.rest.getGuild(interaction.guildId);
             await logger.info(`[${guild.name}] ${user.username} used slash command \`${command.data.name}\`${interaction.data.subCommand ? ` -> \`${interaction.data.subCommand}\`` : ""}`, {
                 guildId: interaction.guildId,
@@ -38,48 +47,17 @@ async function run(interaction: Interaction): Promise<void> {
                 subCommand: interaction.data.subCommand,
             });
         } catch (error) {
-            const err = error as Error;
-
-            const guild = await interaction.client.rest.getGuild(interaction.guildId);
-
-            await interaction.reply(`Oops, you came across an error!\nHere's a summary of it:\n\`\`\`${err.stack}\`\`\`\nDon't worry, the same error log has been sent to the owner of this bot.`);
-
-            await interaction.client.rest.createMessage(interaction.channelId, {
-                content: `<@${process.env.OWNER_ID}> STACK ERROR, GET YOUR ASS TO WORK`,
-                embeds: [
-                    {
-                        type: EmbedType.Rich,
-                        title: `Runtime error on command (slash): ${command.data.name}`,
-                        fields: [
-                            {
-                                name: "User",
-                                value: `<@${user.id}> (${user.username})`,
-                            },
-                            {
-                                name: "Guild",
-                                value: `[${guild.name}](https://discord.com/channels/${interaction.guildId}/${interaction.channelId})`,
-                            },
-                            {
-                                name: "Error",
-                                value: err.stack ?? "undefined (look at logs)",
-                            },
-                        ],
-                    },
-                ],
-            });
-
-            await logger.error(`[${guild.name}] ${user.username} had an error in slash command \`${command.data.name}\`${interaction.data.subCommand ? ` -> \`${interaction.data.subCommand}\`` : ""}`, err, {
-                guildId: interaction.guildId,
-                guildName: guild.name,
-                userId: user.id,
-                username: user.username,
-                command: command.data.name,
+            await handleCommandError(error as Error, {
+                client: interaction.client,
+                interaction,
+                commandName: command.data.name,
                 subCommand: interaction.data.subCommand,
             });
         } finally {
-            const docs = getEntry(Tables.COMMAND_SLASH, interaction.data.name);
-            if (docs === null) insertData({ table: Tables.COMMAND_SLASH, data: [{ key: "count", value: 1 }], id: command.data.name });
-            else insertData({ table: Tables.COMMAND_SLASH, data: [{ key: "count", value: Number(docs.count ?? 0) + 1 }], id: docs.id });
+            const id = `${command.data.name}:slash`;
+            const docs = getEntry(Tables.COMMAND, id);
+            if (docs === null) insertData({ table: Tables.COMMAND, data: [{ key: "count", value: 1 }], id });
+            else insertData({ table: Tables.COMMAND, data: [{ key: "count", value: Number(docs.count ?? 0) + 1 }], id: docs.id });
         }
     }
 }

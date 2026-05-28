@@ -3,11 +3,12 @@ import { commandAliasesCache, commandsCache } from "@utils/cache";
 import { logger } from "@utils/logger";
 import { getEntry, insertData } from "@utils/database";
 import { Tables } from "@type/database";
-import { EmbedType } from "lilybird";
 import type { Message } from "@lilybird/transformers";
 import type { Event } from "@lilybird/handlers";
 import { guildPrefixesCache, cooldownsCache } from "@utils/cache";
 import { deprecatedEmbed } from "embed-builders/deprecated-prefix";
+import { handleCommandError } from "@utils/error";
+import { CommandContext } from "@utils/command-context";
 
 export default {
     event: "messageCreate",
@@ -84,12 +85,14 @@ async function run(message: Message): Promise<void> {
         return;
     }
 
-    // return simple deprecation notice.
-    if (!data.hasPrefixVariant || !command.runMessage) {
+    // return simple deprecation notice only if explicitly requested
+    if (!command.run && !command.runMessage && data.isDeprecatedPrefix) {
         const embed = deprecatedEmbed(data.name);
         await message.reply({ embeds: embed });
         return;
     }
+
+    if (!command.run && !command.runMessage) return;
 
     const channel = await message.fetchChannel();
     if (!channel.isText()) return;
@@ -98,7 +101,12 @@ async function run(message: Message): Promise<void> {
     client.rest.triggerTypingIndicator(channel.id);
 
     try {
-        await command.runMessage({ client: client, message, args, prefix: chosenPrefix, index, commandName, channel });
+        if (command.run) {
+            const ctx = new CommandContext(client, undefined, message, args, chosenPrefix, commandName, channel, index);
+            await command.run(ctx);
+        } else if (command.runMessage) {
+            await command.runMessage({ client: client, message, args, prefix: chosenPrefix, index, commandName, channel });
+        }
 
         const guild = await client.rest.getGuild(guildId);
         await logger.info(`[${guild.name}] ${author.username} used prefix command \`${data.name}\``, {
@@ -110,54 +118,17 @@ async function run(message: Message): Promise<void> {
             prefix: chosenPrefix,
         });
     } catch (error) {
-        // handle errors
-        const err = error as Error;
-
-        await message.reply(`Oops, you came across an error!\nDon't worry, an error log has been sent to the owner of this bot.`, {
-            allowed_mentions: { replied_user: false, parse: [], roles: [], users: [] },
-        });
-
-        const guild = await client.rest.getGuild(guildId);
-
-        await client.rest.createMessage(process.env.ERROR_CHANNEL_ID, {
-            content: `<@${process.env.OWNER_ID}> STACK ERROR, GET YOUR ASS TO WORK`,
-            embeds: [
-                {
-                    type: EmbedType.Rich,
-                    title: `Runtime error on command: ${data.name}`,
-                    fields: [
-                        {
-                            name: "User",
-                            value: `<@${author.id}> (${author.username})`,
-                        },
-                        {
-                            name: "Guild",
-                            value: `[${guild.name}](https://discord.com/channels/${guildId}/${message.channelId})`,
-                        },
-                        {
-                            name: "Message",
-                            value: content,
-                        },
-                        {
-                            name: "Error",
-                            value: err.stack ?? "undefined (look at logs)",
-                        },
-                    ],
-                },
-            ],
-        });
-
-        await logger.error(`[${guild.name}] ${author.username} had an error in prefix command \`${data.name}\``, err, {
-            guildId,
-            guildName: guild.name,
-            userId: author.id,
-            username: author.username,
-            command: data.name,
+        await handleCommandError(error as Error, {
+            client,
+            message,
+            commandName: data.name,
+            content,
             prefix: chosenPrefix,
         });
     } finally {
-        const docs = getEntry(Tables.COMMAND, data.name);
-        if (docs === null) insertData({ table: Tables.COMMAND, data: [{ key: "count", value: 1 }], id: data.name });
+        const id = `${data.name}:prefix`;
+        const docs = getEntry(Tables.COMMAND, id);
+        if (docs === null) insertData({ table: Tables.COMMAND, data: [{ key: "count", value: 1 }], id });
         else insertData({ table: Tables.COMMAND, data: [{ key: "count", value: Number(docs.count ?? 0) + 1 }], id: docs.id });
     }
 
