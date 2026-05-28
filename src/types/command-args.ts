@@ -62,3 +62,10 @@ export interface PrefixCommandArgs {
     flags: Record<string, string | undefined>;
     mods: Mods;
 }
+
+export interface CommandArgs {
+    user: User;
+    mods: Mods;
+    flags: Record<string, string | undefined>;
+    difficultySettings?: DifficultyOptions;
+}
