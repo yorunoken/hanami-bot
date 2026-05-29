@@ -20,7 +20,7 @@ export async function run(ctx: CommandContext) {
 }
 
 async function getOsuResponseTime() {
-    const userId = 38246594; // :>
+    const userId = 17279598;
 
     const osuStart = Date.now();
     await client.safeParse(client.users.getUser(userId));
