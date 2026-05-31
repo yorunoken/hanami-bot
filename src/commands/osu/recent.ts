@@ -85,7 +85,7 @@ async function getEmbeds(user: SuccessUser, authorId: string, index: number, inc
     }
     const osuUser = osuUserRequest.data;
 
-    const plays = await getUserScores(osuUser.id, PlayType.RECENT, { query: { mode: user.mode, limit: 100, include_fails: includeFails } }, user.authorDb);
+    const plays = await getUserScores(osuUser.id, PlayType.RECENT, { query: { mode: user.mode, limit: 200, include_fails: includeFails } }, user.authorDb);
 
     if (plays.length === 0) {
         return {
@@ -150,7 +150,7 @@ export const data = {
                 name: "index",
                 description: "Specify an index, defaults to 1.",
                 min_value: 1,
-                max_value: 100,
+                max_value: 200,
             },
             {
                 type: ApplicationCommandOptionType.STRING,

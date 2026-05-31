@@ -77,7 +77,7 @@ async function getEmbeds(user: SuccessUser, authorId: string, index: number | un
     }
     const osuUser = osuUserRequest.data;
 
-    const plays = await getUserScores(osuUser.id, PlayType.BEST, { query: { mode: user.mode, limit: 100 } }, user.authorDb);
+    const plays = await getUserScores(osuUser.id, PlayType.BEST, { query: { mode: user.mode, limit: 200 } }, user.authorDb);
 
     if (plays.length === 0) {
         return {
@@ -144,7 +144,7 @@ export const data = {
                 name: "index",
                 description: "Specify an index.",
                 min_value: 1,
-                max_value: 100,
+                max_value: 200,
             },
             {
                 type: ApplicationCommandOptionType.INTEGER,
