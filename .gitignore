@@ -1,5 +1,5 @@
 node_modules/
-tests/
+
 logs/
 package-lock.json
 .env*
@@ -8,3 +8,4 @@ package-lock.json
 *.tsbuildinfo
 bun.lockb
 command-ids.json
+osu-token.json

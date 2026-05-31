@@ -1,0 +1,190 @@
+import { expect, test, describe } from "bun:test";
+import { getFormattedProfile } from "../../src/utils/formatter";
+import { Mode } from "../../src/types/osu";
+import type { UserExtended } from "../../src/types/osu";
+
+describe("formatter", () => {
+    describe("getFormattedProfile", () => {
+        const mockUser: any = {
+            avatar_url: "https://a.ppy.sh/12345",
+            country_code: "US",
+            default_group: "default",
+            id: 12345,
+            is_active: true,
+            is_bot: false,
+            is_deleted: false,
+            is_online: true,
+            is_supporter: true,
+            last_visit: "2023-01-01T00:00:00Z",
+            pm_friends_only: false,
+            profile_colour: null,
+            username: "peppy",
+            cover_url: "https://assets.ppy.sh/users/12345/cover.jpg",
+            discord: "peppy#1234",
+            has_supported: true,
+            interests: "Programming",
+            join_date: "2007-08-28T00:00:00Z",
+            kudosu: { available: 100, total: 200 },
+            location: "Japan",
+            max_blocks: 50,
+            max_friends: 500,
+            occupation: "Developer",
+            playmode: "osu",
+            playstyle: ["mouse", "keyboard"],
+            post_count: 500,
+            profile_order: ["me", "recent_activity"],
+            title: "Creator",
+            title_url: null,
+            twitter: "ppy",
+            website: "https://ppy.sh",
+            country: { code: "US", name: "United States" },
+            cover: { custom_url: "https://custom.url", url: "https://cover.url", id: "123" },
+            statistics: {
+                level: { current: 100, progress: 50 },
+                global_rank: 1,
+                pp: 20000,
+                ranked_score: 10000000000,
+                hit_accuracy: 99.99,
+                play_count: 50000,
+                play_time: 3600000, // 1000 hours
+                total_score: 20000000000,
+                total_hits: 10000000,
+                maximum_combo: 10000,
+                replays_watched_by_others: 50000,
+                is_ranked: true,
+                grade_counts: { ss: 100, ssh: 50, s: 500, sh: 250, a: 1000 },
+                country_rank: 1,
+            },
+            rank_highest: { rank: 1, updated_at: "2020-01-01T00:00:00Z" },
+            follower_count: 100000,
+            mapping_follower_count: 10000,
+            pending_beatmapset_count: 5,
+            previous_usernames: ["peppy2"],
+            support_level: 3,
+            loved_beatmapset_count: 2,
+            ranked_beatmapset_count: 50,
+            scores_best_count: 100,
+            scores_first_count: 5,
+            scores_pinned_count: 2,
+            scores_recent_count: 10,
+            session_verified: true,
+            guest_beatmapset_count: 0,
+            nominated_beatmapset_count: 0,
+            graveyard_beatmapset_count: 0,
+            unranked_beatmapset_count: 0,
+        };
+
+        test("formats profile data correctly", () => {
+            const result = getFormattedProfile(mockUser, Mode.OSU);
+
+            expect(result.username).toBe("peppy");
+            expect(result.userCover).toBe("https://cover.url");
+            expect(result.avatarUrl).toBe("https://a.ppy.sh/12345");
+            expect(result.userUrl).toBe("https://osu.ppy.sh/users/12345/osu");
+            expect(result.flagUrl).toBe("https://osu.ppy.sh/images/flags/US.png");
+            expect(result.globalRank).toBe("1");
+            expect(result.countryRank).toBe("1");
+            expect(result.pp).toBe("20,000");
+            expect(result.accuracy).toBe("99.99");
+            expect(result.level).toBe("100.50");
+            expect(result.playCount).toBe("50,000");
+            expect(result.playHours).toBe("1000");
+            expect(result.followers).toBe("100,000");
+            expect(result.maxCombo).toBe("10,000");
+            expect(result.rankedScore).toBe("10,000,000,000");
+            expect(result.totalScore).toBe("20,000,000,000");
+            expect(result.objectsHit).toBe("10,000,000");
+            expect(result.occupation).toBe("Developer");
+            expect(result.interest).toBe("Programming");
+            expect(result.location).toBe("Japan");
+            expect(result.rankSs).toBe("100");
+            expect(result.rankSsh).toBe("50");
+            expect(result.rankS).toBe("500");
+            expect(result.rankSh).toBe("250");
+            expect(result.rankA).toBe("1,000");
+        });
+    });
+
+    describe("getFormattedScore", () => {
+        // Mock a basic .osu file content for the beatmap to avoid fetching
+        const mockMapData = `osu file format v14
+[General]
+AudioFilename: audio.mp3
+Mode: 0
+[Metadata]
+Title:Test Title
+Artist:Test Artist
+Creator:Test Creator
+Version:Test Version
+[Difficulty]
+HPDrainRate:5
+CircleSize:5
+OverallDifficulty:5
+ApproachRate:5
+SliderMultiplier:1.4
+SliderTickRate:1
+[HitObjects]
+256,192,1000,1,0,0:0:0:0:
+256,192,2000,1,0,0:0:0:0:
+256,192,3000,1,0,0:0:0:0:
+`;
+
+        test("formats score data correctly", async () => {
+            // Need to import the module at the top, but we can do it here for the test
+            const { getFormattedScore } = await import("../../src/utils/formatter");
+            const { Mode } = await import("../../src/types/osu");
+
+            const mockScore: any = {
+                score: 1000000,
+                created_at: "2023-01-01T00:00:00Z",
+                statistics: {
+                    count_300: 3,
+                    count_100: 0,
+                    count_50: 0,
+                    count_miss: 0,
+                },
+                max_combo: 3,
+                mods: [],
+                passed: true,
+                rank: "SS",
+                accuracy: 1,
+                beatmap: {
+                    id: 72727,
+                    version: "Test Version",
+                    total_length: 120,
+                    hit_length: 120,
+                    bpm: 120,
+                    cs: 5,
+                    drain: 5,
+                    accuracy: 5,
+                    ar: 5,
+                },
+                beatmapset: {
+                    id: 1234,
+                    artist: "Test Artist",
+                    title: "Test Title",
+                    creator: "Test Creator",
+                    status: "ranked",
+                },
+            };
+
+            const result = await getFormattedScore({
+                scores: [mockScore],
+                index: 0,
+                mode: Mode.OSU,
+                mapData: mockMapData,
+            });
+
+            expect(result.score).toBe("1,000,000");
+            expect(result.accuracy).toBe("100.00");
+            expect(result.songNameFormatted).toBe("Test Artist - Test Title");
+            expect(result.songArtist).toBe("Test Artist");
+            expect(result.songName).toBe("Test Title");
+            expect(result.difficultyName).toBe("Test Version");
+            expect(result.mapLink).toBe("https://osu.ppy.sh/b/72727");
+            expect(result.coverLink).toBe("https://assets.ppy.sh/beatmaps/1234/covers/cover.jpg");
+            expect(result.isFc).toBe(true);
+            expect(result.drainLength).toBe("2:00");
+        });
+    });
+});
