@@ -78,7 +78,13 @@ async function handleButton(interaction: Interaction): Promise<void> {
     }
 
     // Temporarily disable all buttons during processing
-    await interaction.deferComponentReply();
+    const currentComponents = createPaginationActionRow(builderOptions);
+    const disabledComponents = currentComponents.map((row: any) => ({
+        ...row,
+        components: row.components.map((btn: any) => ({ ...btn, disabled: true })),
+    }));
+    
+    await interaction.updateComponents({ components: disabledComponents });
 
     if (interaction.data.id === "wildcard-page" || interaction.data.id === "wildcard-index") {
         await interaction.editReply({ content: "This feature has not been implemented yet." });
