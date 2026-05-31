@@ -134,28 +134,26 @@ export type Rank = "XH" | "X" | "SH" | "S" | "A" | "B" | "C" | "D" | "F" | "SSH"
 export type GameMode = "osu" | "taiko" | "fruits" | "mania" | string;
 
 export interface Country { code: string; name: string }
+export interface UserStatistics { grade_counts: Record<string, number>; }
 export interface Cover { custom_url: string; url: string; id?: string }
 
 // Re-use osu-api-extended's exact user details interface
 export type UserExtended = v2_users_details.UsersDetailsResponse;
 
 // Base Beatmap types needed by codebase
-export interface Beatmapset {
+export type Beatmapset = {
     artist: string;
     title: string;
     creator: string;
     id: number;
     status: string;
     ratings?: Array<number>;
-    [key: string]: any;
-}
+} & Record<string, any>;
 
-export interface Beatmap extends v2_beatmaps_details_difficulty.beatmaps_details_difficulty_response {
-    [key: string]: any;
-}
+export type Beatmap = v2_beatmaps_details_difficulty.beatmaps_details_difficulty_response & Record<string, any>;
 
 // Unified Score type covering Leaderboard, UserBest, UserRecent
-export interface Score {
+export type Score = {
     id: number;
     user_id: number;
     accuracy: number;
@@ -174,10 +172,8 @@ export interface Score {
     position?: number;
     user?: {
         username: string;
-        [key: string]: any;
-    };
-    [key: string]: any;
-}
+    } & Record<string, any>;
+} & Record<string, any>;
 
 // Aliases for compatibility
 export type UserScore = Score;

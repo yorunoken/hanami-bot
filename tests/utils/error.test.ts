@@ -1,7 +1,7 @@
 import { expect, test, describe, mock, beforeEach, afterEach } from "bun:test";
 import { handleCommandError } from "../../src/utils/error";
 import { logger } from "../../src/utils/logger";
-import { EmbedType } from "lilybird";
+
 
 // Mock logger
 mock.module("../../src/utils/logger", () => {

@@ -1,7 +1,7 @@
 import { expect, test, describe } from "bun:test";
 import { getFormattedProfile } from "../../src/utils/formatter";
 import { Mode } from "../../src/types/osu";
-import type { UserExtended } from "../../src/types/osu";
+
 
 describe("formatter", () => {
     describe("getFormattedProfile", () => {

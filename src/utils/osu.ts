@@ -1,5 +1,4 @@
 import { bulkInsertData, getEntry, insertData } from "@utils/database";
-import { logger } from "@utils/logger";
 import { Mode } from "@type/osu";
 import { Tables } from "@type/database";
 import { Beatmap, BeatmapAttributesBuilder, Performance } from "rosu-pp-js";

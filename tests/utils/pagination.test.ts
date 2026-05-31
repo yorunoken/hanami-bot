@@ -1,7 +1,5 @@
 import { expect, test, describe } from "bun:test";
-import { PaginationManager, PaginationType, PaginationAction, ITEMS_PER_PAGE } from "../../src/utils/pagination";
-import { ComponentType } from "lilybird";
-import type { EmbedBuilderOptions } from "../../src/types/builders";
+import { PaginationManager, PaginationType, PaginationAction } from "../../src/utils/pagination";
 
 describe("PaginationManager", () => {
     describe("parseButtonAction", () => {
@@ -38,7 +36,6 @@ describe("PaginationManager", () => {
         });
 
         test("calculates NEXT action for PAGE", () => {
-            const maxPage = Math.ceil(totalItems / ITEMS_PER_PAGE) - 1; // 20 / 5 - 1 = 3
             expect(PaginationManager.calculateNewValue(PaginationAction.NEXT, 2, totalItems, PaginationType.PAGE)).toBe(3);
             expect(PaginationManager.calculateNewValue(PaginationAction.NEXT, 3, totalItems, PaginationType.PAGE)).toBe(3);
         });
@@ -49,8 +46,7 @@ describe("PaginationManager", () => {
         });
 
         test("calculates LAST action for PAGE", () => {
-            const maxPage = Math.ceil(totalItems / ITEMS_PER_PAGE) - 1; // 3
-            expect(PaginationManager.calculateNewValue(PaginationAction.LAST, 0, totalItems, PaginationType.PAGE)).toBe(maxPage);
+            expect(PaginationManager.calculateNewValue(PaginationAction.LAST, 0, totalItems, PaginationType.PAGE)).toBe(3);
         });
     });
 

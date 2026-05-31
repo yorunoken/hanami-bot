@@ -7,7 +7,7 @@ export async function getUserScores(
     userId: number,
     type: PlayType,
     options: { query: { mode: Mode; limit: number; include_fails?: boolean } },
-    authorDb: User | null,
+    _authorDb: User | null,
 ): Promise<Array<Score>> {
     const apiType = type === "best" ? "user_best" : type === "recent" ? "user_recent" : "user_firsts";
     
@@ -31,7 +31,7 @@ export async function getBeatmapUserScores(
     beatmapId: number, 
     userId: number, 
     options: { query: { mode: Mode } }, 
-    authorDb: User | null
+    _authorDb: User | null
 ): Promise<Array<Score>> {
     const scores = await v2.scores.list({
         type: "user_beatmap_all",

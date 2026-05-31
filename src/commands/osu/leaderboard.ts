@@ -10,7 +10,6 @@ import { ApplicationCommandOptionType, EmbedType } from "lilybird";
 import type { LeaderboardBuilderOptions } from "@type/builders";
 import { v2 } from "osu-api-extended";
 import { safeParse } from "@utils/safe-parse";
-import type { Mod } from "@type/mods";
 import type { GameMode, Beatmap } from "@type/osu";
 
 const modeAliases: Record<string, { isGlobal: boolean }> = {
