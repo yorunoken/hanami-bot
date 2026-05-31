@@ -98,7 +98,7 @@ export function getCommandArgs(interaction: GuildInteraction<ApplicationCommandD
 
     const modsValue = data.getString("mods");
     const modSections = modsValue?.toUpperCase().match(/.{1,2}/g);
-    if (modSections && !modSections.every((selectedMod) => selectedMod in enums.ModsEnum || modsValue === "NM")) {
+    if (modSections && modSections.every((selectedMod) => selectedMod in enums.ModsEnum || modsValue === "NM")) {
         mods = {
             exclude: data.getBoolean("exclude") ?? null,
             include: data.getBoolean("include") ?? null,
@@ -181,7 +181,7 @@ export function parseOsuArguments(message: Message, args: Array<string>, mode: M
             const modSections = /.{1,2}/g.exec(mod);
 
             // Make sure `mod` is an actual mod in osu!
-            if (modSections && !modSections.every((selectedMod) => selectedMod.toUpperCase() in enums.ModsEnum || mod.toUpperCase() === "NM")) continue;
+            if (modSections && modSections.every((selectedMod) => selectedMod.toUpperCase() in enums.ModsEnum || mod.toUpperCase() === "NM")) continue;
 
             result.mods.include = modType !== "-";
             result.mods.exclude = modType === "-" && typeof force !== "undefined";
