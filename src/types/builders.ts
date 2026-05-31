@@ -1,7 +1,8 @@
 import type { DifficultyOptions } from "./command-args";
 import type { User } from "./database";
 import type { Beatmap, LeaderboardScore, Mode, Score, UserBestScoreV2, UserScoreV2, ScoreV2, UserBestScore, UserScore } from "./osu";
-import type { UserExtended, Mod } from "osu-web.js";
+import type { UserExtended } from "./osu";
+import type { Mod } from "./mods";
 
 export const enum EmbedBuilderType {
     COMPARE = "compareBuilder",

@@ -1,21 +1,23 @@
 import db from "@db" with { type: "sqlite" };
-import { getAccessToken } from "@utils/osu";
 import { removeEntry } from "@utils/database";
 import { guildPrefixesCache, commandsCache, slashCommandIdsCache, commandAliasesCache } from "@utils/cache";
 import { logger } from "@utils/logger";
 import { Tables } from "@type/database";
-import { Client as OsuClient } from "osu-web.js";
+import { auth } from "osu-api-extended";
 import { readdir } from "fs/promises";
 import type { Guild } from "@type/database";
 import type { CommandFileData } from "@type/commands";
 import { Client, ApplicationCommand } from "lilybird";
 
-const tokenResult = await getAccessToken(+process.env.OSU_CLIENT_ID, process.env.OSU_CLIENT_SECRET, ["public"]);
-if (!tokenResult) {
-    throw new Error("Failed to get initial access token");
+export async function initializeOsuApi(): Promise<void> {
+    await auth.login({
+        type: "v2",
+        client_id: Number(process.env.OSU_CLIENT_ID),
+        client_secret: process.env.OSU_CLIENT_SECRET,
+        cachedTokenPath: "./osu-token.json",
+        scopes: ["public"],
+    });
 }
-const { accessToken } = tokenResult;
-export const client = new OsuClient(accessToken);
 
 export async function loadCommands(lilyClient: Client): Promise<void> {
     // temp array to store promises

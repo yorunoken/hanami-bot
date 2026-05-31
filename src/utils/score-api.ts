@@ -1,30 +1,48 @@
-import { client } from "@utils/initialize";
-import { type User, ScoreData } from "@type/database";
-import type { UserScore, UserBestScore, UserScoreV2, UserBestScoreV2, Score, ScoreV2, PlayType, Mode } from "@type/osu";
+import { v2 } from "osu-api-extended";
+import { type User } from "@type/database";
+import type { Score, PlayType, Mode } from "@type/osu";
 
-function shouldUseLazerApi(authorDb: User | null): boolean {
-    return (authorDb?.score_data ?? ScoreData.Stable) === ScoreData.Lazer;
-}
-
-// Gets user scores using either V1 (stable) or V2 (lazer) API based on user preference
+// Gets user scores using V2 unified format
 export async function getUserScores(
     userId: number,
     type: PlayType,
     options: { query: { mode: Mode; limit: number; include_fails?: boolean } },
     authorDb: User | null,
-): Promise<Array<UserBestScoreV2 | UserScoreV2 | UserBestScore | UserScore>> {
-    const scores = shouldUseLazerApi(authorDb)
-        ? ((await client.users.getUserScoresV2(userId, type, options)) as unknown as Array<UserBestScoreV2 | UserScoreV2>)
-        : await client.users.getUserScores(userId, type, options);
+): Promise<Array<Score>> {
+    const apiType = type === "best" ? "user_best" : type === "recent" ? "user_recent" : "user_firsts";
+    
+    const scores = await v2.scores.list({
+        type: apiType,
+        user_id: userId,
+        mode: options.query.mode,
+        limit: options.query.limit,
+        include_fails: options.query.include_fails,
+    });
 
-    return scores.map((score, index) => ({ ...score, position: index + 1 }));
+    if ("error" in scores || !Array.isArray(scores)) {
+        throw new Error(scores.error?.message ?? "Failed to fetch user scores");
+    }
+
+    return (scores as Array<Score>).map((score, index) => ({ ...score, position: index + 1 }));
 }
 
-// Gets beatmap user scores using either V1 (stable) or V2 (lazer) API based on user preference
-export async function getBeatmapUserScores(beatmapId: number, userId: number, options: { query: { mode: Mode } }, authorDb: User | null): Promise<Array<Score | ScoreV2>> {
-    const scores = shouldUseLazerApi(authorDb)
-        ? ((await client.beatmaps.getBeatmapUserScoresV2(beatmapId, userId, options)) as unknown as Array<ScoreV2>)
-        : await client.beatmaps.getBeatmapUserScores(beatmapId, userId, options);
+// Gets beatmap user scores using V2 unified format
+export async function getBeatmapUserScores(
+    beatmapId: number, 
+    userId: number, 
+    options: { query: { mode: Mode } }, 
+    authorDb: User | null
+): Promise<Array<Score>> {
+    const scores = await v2.scores.list({
+        type: "user_beatmap_all",
+        beatmap_id: beatmapId,
+        user_id: userId,
+        mode: options.query.mode,
+    });
 
-    return scores.map((score, index) => ({ ...score, position: index + 1 }));
+    if ("error" in scores || !Array.isArray(scores)) {
+        throw new Error(scores.error?.message ?? "Failed to fetch beatmap user scores");
+    }
+
+    return (scores as Array<Score>).map((score, index) => ({ ...score, position: index + 1 }));
 }

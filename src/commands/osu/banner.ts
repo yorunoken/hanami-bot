@@ -4,7 +4,8 @@ import { SuccessUser, UserType } from "@type/command-args";
 import { CommandData } from "@type/commands";
 import { Mode } from "@type/osu";
 import { parseCommandArgs } from "@utils/args";
-import { client } from "@utils/initialize";
+import { v2 } from "osu-api-extended";
+import { safeParse } from "@utils/safe-parse";
 import { ApplicationCommandOptionType, EmbedType } from "lilybird";
 
 import { CommandContext } from "@utils/command-context";
@@ -23,7 +24,7 @@ export async function run(ctx: CommandContext) {
 }
 
 async function getEmbeds(user: SuccessUser, authorId: string) {
-    const osuUserRequest = await client.safeParse(client.users.getUser(user.banchoId, { urlParams: { mode: user.mode } }));
+    const osuUserRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: user.mode }));
     if (!osuUserRequest.success) {
         return [
             {

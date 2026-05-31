@@ -6,7 +6,7 @@ import { Mode } from "@type/osu";
 import { parseCommandArgs } from "@utils/args";
 import { getBeatmapIdFromContext } from "@utils/osu";
 import { ApplicationCommandOptionType, EmbedType } from "lilybird";
-import { Mod } from "osu-web.js";
+import type { Mod } from "@type/mods";
 
 import { CommandContext } from "@utils/command-context";
 
@@ -39,7 +39,7 @@ async function getEmbed(beatmapId: string | number | null, authorId: string, mod
         type: EmbedBuilderType.MAP,
         initiatorId: authorId,
         beatmapId: Number(beatmapId),
-        mods: (mods.name?.match(/.{1,2}/g) as Array<Mod> | null) ?? null,
+        mods: ((typeof mods.name === "string" ? mods.name : mods.name?.acronym)?.match(/.{1,2}/g) as Array<Mod> | null) ?? null,
     });
     return embeds;
 }

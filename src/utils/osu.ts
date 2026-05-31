@@ -3,50 +3,18 @@ import { logger } from "@utils/logger";
 import { Mode } from "@type/osu";
 import { Tables } from "@type/database";
 import { Beatmap, BeatmapAttributesBuilder, Performance } from "rosu-pp-js";
-import { ModsEnum } from "osu-web.js";
+import { enums, v2, type Modes_names } from "osu-api-extended";
 import { ChannelType } from "lilybird";
 import https from "https";
 import type { Score as ScoreDatabase } from "@type/database";
 import type { Message } from "@lilybird/transformers";
 import type { Mod } from "@type/mods";
-import type { UserScore, UserBestScore, UserScoreV2, UserBestScoreV2, ScoreV2, AccessTokenJSON, AuthScope, LeaderboardScoresRaw, PerformanceInfo, Score, LeaderboardScore } from "@type/osu";
+import type { PerformanceInfo, Score, LeaderboardScore, GameMode, Rank, ScoreStatistics, Beatmap as BeatmapWeb } from "@type/osu";
 import type { Client, Embed } from "lilybird";
-import type { GameMode, Mod as ModOsuWeb, Rank, Beatmap as BeatmapWeb, ScoreStatistics } from "osu-web.js";
 
-export async function getAccessToken(
-    clientId: number,
-    clientSecret: string,
-    scope: Array<AuthScope>,
-): Promise<{
-    accessToken: string;
-    expiresIn: number;
-} | null> {
-    const body = JSON.stringify({
-        grant_type: "client_credentials",
-        client_id: clientId,
-        client_secret: clientSecret,
-        scope: scope.join(" "),
-        code: "code",
-    });
 
-    const request = await fetch("https://osu.ppy.sh/oauth/token", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body,
-    });
-    if (!request.ok) {
-        logger.error(`Failed to get access token: ${request.status} ${request.statusText}`);
-        return null;
-    }
 
-    const data = (await request.json()) as AccessTokenJSON;
-
-    return { accessToken: data.access_token, expiresIn: data.expires_in };
-}
-
-function getModsEnum(mods: Array<ModOsuWeb>, derivativeModsWithOriginal?: boolean): number {
+function getModsEnum(mods: Array<string>, derivativeModsWithOriginal?: boolean): number {
     return mods.reduce((count, mod) => {
         if (
             !["NF", "EZ", "TD", "HD", "HR", "SD", "DT", "RX", "HT", "NC", "FL", "AT", "SO", "AP", "PF", "4K", "5K", "6K", "7K", "8K", "FI", "RD", "CN", "TP", "K9", "KC", "1K", "2K", "3K", "SV2", "MR"].includes(
@@ -55,32 +23,31 @@ function getModsEnum(mods: Array<ModOsuWeb>, derivativeModsWithOriginal?: boolea
         )
             return count;
 
-        if (mod === "NC" && derivativeModsWithOriginal) return count + ModsEnum.NC + ModsEnum.DT;
+        if (mod === "NC" && derivativeModsWithOriginal) return count + enums.ModsEnum.NC + enums.ModsEnum.DT;
 
-        if (mod === "PF" && derivativeModsWithOriginal) return count + ModsEnum.PF + ModsEnum.SD;
+        if (mod === "PF" && derivativeModsWithOriginal) return count + enums.ModsEnum.PF + enums.ModsEnum.SD;
 
-        return count + ModsEnum[mod as keyof typeof ModsEnum];
+        return count + enums.ModsEnum[mod as keyof typeof enums.ModsEnum];
     }, 0);
 }
 
-export async function getBeatmapTopScores({ beatmapId, isGlobal, mode, mods }: { beatmapId: number; isGlobal: boolean; mode: GameMode; mods: Array<ModOsuWeb> | undefined }): Promise<Array<LeaderboardScore>> {
-    const leaderboard = await fetch(
-        `https://osu.ppy.sh/beatmaps/${beatmapId}/scores?mode=${mode}&type=${isGlobal ? "global" : "country"}${mods ? mods.map((mod) => `&mods[]=${mod.toUpperCase()}`).join("") : ""}`,
-        {
-            headers: {
-                "Content-Type": "application/json",
-                Cookie: `osu_session=${process.env.OSU_ACCESS_TOKEN}`,
-            },
-        },
-    ).then((res) => {
-        return res.json() as unknown as LeaderboardScoresRaw;
+export async function getBeatmapTopScores({ beatmapId, isGlobal, mode, mods }: { beatmapId: number; isGlobal: boolean; mode: GameMode; mods: Array<string> | undefined }): Promise<Array<LeaderboardScore>> {
+    const scores = await v2.scores.list({
+        type: "leaderboard",
+        leaderboard_type: isGlobal ? "global" : "country",
+        beatmap_id: beatmapId,
+        mode: mode as Modes_names,
+        mods: mods?.map((mod) => mod.toUpperCase()),
     });
-    const { scores } = leaderboard;
 
-    return scores;
+    if ("error" in scores || !Array.isArray(scores)) {
+        throw new Error(scores.error?.message ?? "Failed to fetch top scores");
+    }
+
+    return scores as Array<LeaderboardScore>;
 }
 
-function isNewMods(mods: Array<Mod> | Array<ModOsuWeb>): mods is Array<Mod> {
+function isNewMods(mods: Array<Mod> | Array<string>): mods is Array<Mod> {
     return Array.isArray(mods) && mods.every((mod) => typeof mod === "object" && "acronym" in mod);
 }
 
@@ -97,7 +64,7 @@ export async function getPerformanceResults({
     mapData,
     objectsHit,
 }: {
-    play?: UserBestScore | UserScore | Score | LeaderboardScore | UserBestScoreV2 | UserScoreV2 | ScoreV2;
+    play?: Score | LeaderboardScore;
     setId?: number;
     beatmapId: number;
     maxCombo?: number;
@@ -105,7 +72,7 @@ export async function getPerformanceResults({
     clockRate?: number;
     mapSettings?: { ar?: number; od?: number; cs?: number };
     hitValues?: { count_100?: number; count_300?: number; count_50?: number; count_geki?: number | null; count_katu?: number | null; count_miss?: number };
-    mods: Array<ModOsuWeb> | Array<Mod> | number;
+    mods: Array<string> | Array<Mod> | number;
     mapData?: string;
     objectsHit?: number;
 }): Promise<PerformanceInfo | null> {
@@ -134,8 +101,8 @@ export async function getPerformanceResults({
             modsStringArray.push(mod.acronym);
         }
     } else {
-        modsInt = getModsEnum(mods, true);
-        modsStringArray = mods;
+        modsInt = getModsEnum(mods as Array<string>, true);
+        modsStringArray = mods as Array<string>;
     }
 
     const beatmap = new Beatmap(mapData);
@@ -397,7 +364,7 @@ export function hitValueCalculator(
     return hitValues;
 }
 
-export function saveScoreDatas(scores: Array<UserBestScore | UserScore | Score | UserBestScoreV2 | UserScoreV2 | ScoreV2>, mode: Mode, mapTemp?: BeatmapWeb): void {
+export function saveScoreDatas(scores: Array<Score>, mode: Mode, mapTemp?: BeatmapWeb): void {
     const scoresList = [];
     for (const score of scores) {
         if (score.passed) scoresList.push(saveScore(score, mode, mapTemp));
@@ -407,7 +374,7 @@ export function saveScoreDatas(scores: Array<UserBestScore | UserScore | Score |
 }
 
 function saveScore(
-    play: UserBestScore | UserScore | Score | UserBestScoreV2 | UserScoreV2 | ScoreV2,
+    play: Score,
     mode: Mode,
     mapTemp?: BeatmapWeb,
 ): {
@@ -422,7 +389,7 @@ function saveScore(
     if (mapTemp) {
         beatmap = mapTemp;
     } else {
-        const { beatmap: map } = play as UserBestScore | UserScore;
+        const { beatmap: map } = play;
         beatmap = map;
     }
 
@@ -462,7 +429,7 @@ function saveScore(
             },
             {
                 key: "score",
-                value: "score" in play ? play.score : play.total_score,
+                value: ("score" in play && play.score) ? play.score : (play.total_score ?? 0),
             },
             {
                 key: "accuracy",
@@ -478,15 +445,15 @@ function saveScore(
             },
             {
                 key: "count_50",
-                value: statistics.count_50,
+                value: statistics.count_50 ?? 0,
             },
             {
                 key: "count_100",
-                value: statistics.count_100,
+                value: statistics.count_100 ?? 0,
             },
             {
                 key: "count_300",
-                value: statistics.count_300,
+                value: statistics.count_300 ?? 0,
             },
             {
                 key: "count_geki",
@@ -498,7 +465,7 @@ function saveScore(
             },
             {
                 key: "count_miss",
-                value: statistics.count_miss,
+                value: statistics.count_miss ?? 0,
             },
             {
                 key: "map_state",
@@ -506,7 +473,7 @@ function saveScore(
             },
             {
                 key: "ended_at",
-                value: "created_at" in play ? play.created_at : play.ended_at,
+                value: "created_at" in play && play.created_at ? play.created_at : (play.ended_at ?? ""),
             },
         ],
     };

@@ -1,5 +1,6 @@
 import { CommandData } from "@type/commands";
-import { client } from "@utils/initialize";
+import { v2 } from "osu-api-extended";
+import { safeParse } from "@utils/safe-parse";
 
 import { CommandContext } from "@utils/command-context";
 
@@ -23,7 +24,7 @@ async function getOsuResponseTime() {
     const userId = 17279598;
 
     const osuStart = Date.now();
-    await client.safeParse(client.users.getUser(userId));
+    await safeParse(v2.users.details({ user: userId }));
     const osuEnd = Date.now();
 
     return osuEnd - osuStart;

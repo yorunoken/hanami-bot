@@ -1,21 +1,6 @@
 import type { Mod } from "./mods";
-import type {
-    UserScore as UserScore_,
-    UserScoreV2 as UserScoreV2_,
-    UserBestScore as UserBestScore_,
-    UserBestScoreV2 as UserBestScoreV2_,
-    Score as Score_,
-    ScoreV2 as ScoreV2_,
-    Beatmapset,
-    Fails,
-    Beatmap as BeatmapWeb,
-    Country,
-    Cover,
-    UserCompact,
-    Rank,
-    ISOTimestamp,
-} from "osu-web.js";
 import type { Beatmap as BeatmapRosu, BeatmapAttributes, PerformanceAttributes } from "rosu-pp-js";
+import type { v2_users_details, v2_beatmaps_details_difficulty } from "osu-api-extended";
 
 export const enum Mode {
     OSU = "osu",
@@ -119,9 +104,17 @@ export interface AccessTokenJSON {
     expires_in: number;
 }
 
-export interface ScoreStatisticsV2 {
-    perfect: number | null;
-    great: number | null;
+export interface ScoreStatistics {
+    count_300?: number;
+    count_100?: number;
+    count_50?: number;
+    count_miss?: number;
+    count_geki?: number | null;
+    count_katu?: number | null;
+    
+    // v2 naming mappings
+    perfect?: number | null;
+    great?: number | null;
     good?: number;
     ignore_hit?: number;
     ignore_miss?: number;
@@ -136,83 +129,64 @@ export interface ScoreStatisticsV2 {
     small_tick_miss?: number;
 }
 
-export interface LeaderboardScore {
-    position?: number;
-    ranked: boolean;
-    preserve: boolean;
-    maximum_statistics: {
-        great: number;
-        legacy_combo_increase: number;
-    };
-    mods: Array<Mod>;
-    statistics: ScoreStatisticsV2;
-    beatmap_id: number;
-    best_id: number | null;
+export type ISOTimestamp = string;
+export type Rank = "XH" | "X" | "SH" | "S" | "A" | "B" | "C" | "D" | "F" | "SSH" | "SS";
+export type GameMode = "osu" | "taiko" | "fruits" | "mania" | string;
+
+export interface Country { code: string; name: string }
+export interface Cover { custom_url: string; url: string; id?: string }
+
+// Re-use osu-api-extended's exact user details interface
+export type UserExtended = v2_users_details.UsersDetailsResponse;
+
+// Base Beatmap types needed by codebase
+export interface Beatmapset {
+    artist: string;
+    title: string;
+    creator: string;
     id: number;
-    rank: Rank;
-    type: string;
-    user_id: number;
-    accuracy: number;
-    build_id: number | null;
-    ended_at: ISOTimestamp;
-    has_replay: boolean;
-    is_perfect_combo: boolean;
-    legacy_perfect: boolean;
-    legacy_score_id: number;
-    legacy_total_score: number;
-    max_combo: number;
-    passed: boolean;
-    pp: number;
-    ruleset_id: 0 | 1 | 2 | 3;
-    started_at: string | null;
-    total_score: number;
-    replay: boolean;
-    current_user_attributes: {
-        pin: number | null;
-    } | null;
-    user: UserCompact & {
-        country: Country;
-        cover: Cover;
-    };
+    status: string;
+    ratings?: Array<number>;
+    [key: string]: any;
 }
 
-export type Beatmap = BeatmapWeb & {
-    beatmapset: Beatmapset & {
-        ratings: Array<number>;
-    };
-    checksum: string | null;
-    failtimes: Fails;
+export interface Beatmap extends v2_beatmaps_details_difficulty.beatmaps_details_difficulty_response {
+    [key: string]: any;
+}
+
+// Unified Score type covering Leaderboard, UserBest, UserRecent
+export interface Score {
+    id: number;
+    user_id: number;
+    accuracy: number;
     max_combo: number;
-};
+    passed: boolean;
+    pp: number | null;
+    rank: Rank;
+    score?: number;
+    total_score?: number;
+    statistics: ScoreStatistics;
+    beatmap: Beatmap;
+    beatmapset: Beatmapset;
+    created_at?: ISOTimestamp;
+    ended_at?: ISOTimestamp;
+    mods: Array<Mod> | Array<string>;
+    position?: number;
+    user?: {
+        username: string;
+        [key: string]: any;
+    };
+    [key: string]: any;
+}
+
+// Aliases for compatibility
+export type UserScore = Score;
+export type UserBestScore = Score;
+export type UserScoreV2 = Score;
+export type UserBestScoreV2 = Score;
+export type ScoreV2 = Score;
+export type LeaderboardScore = Score;
 
 export interface LeaderboardScoresRaw {
     scores: Array<LeaderboardScore>;
-}
-
-export interface UserScore extends UserScore_ {
-    position: number;
-}
-
-export interface UserBestScore extends UserBestScore_ {
-    position: number;
-}
-
-export interface UserScoreV2 extends Omit<UserScoreV2_, "statistics"> {
-    statistics: ScoreStatisticsV2;
-    position: number;
-}
-
-
-export interface UserBestScoreV2 extends Omit<UserBestScoreV2_, "statistics"> {
-    statistics: ScoreStatisticsV2;
-    position: number;
-}
-
-export interface Score extends Score_ {
-    position: number;
-}
-
-export interface ScoreV2 extends Omit<ScoreV2_, "statistics"> {
-    statistics: ScoreStatisticsV2;
-    position: number;
 }

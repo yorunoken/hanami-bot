@@ -2,10 +2,10 @@ import { getEntry } from "./database";
 import { Mode } from "@type/osu";
 import { UserType } from "@type/command-args";
 import { Tables } from "@type/database";
-import { ModsEnum } from "osu-web.js";
+import { enums } from "osu-api-extended";
 import type { SlashCommandArgs, DifficultyOptions, Mods, PrefixCommandArgs, User, CommandArgs } from "@type/command-args";
 import type { CommandContext } from "./command-context";
-import type { Mod } from "osu-web.js";
+import type { Mod } from "@type/mods";
 import type { ApplicationCommandData, GuildInteraction, Message } from "@lilybird/transformers";
 import { slashCommandIdsCache } from "./cache";
 
@@ -98,7 +98,7 @@ export function getCommandArgs(interaction: GuildInteraction<ApplicationCommandD
 
     const modsValue = data.getString("mods");
     const modSections = modsValue?.toUpperCase().match(/.{1,2}/g);
-    if (modSections && !modSections.every((selectedMod) => selectedMod in ModsEnum || modsValue === "NM")) {
+    if (modSections && !modSections.every((selectedMod) => selectedMod in enums.ModsEnum || modsValue === "NM")) {
         mods = {
             exclude: data.getBoolean("exclude") ?? null,
             include: data.getBoolean("include") ?? null,
@@ -181,13 +181,13 @@ export function parseOsuArguments(message: Message, args: Array<string>, mode: M
             const modSections = /.{1,2}/g.exec(mod);
 
             // Make sure `mod` is an actual mod in osu!
-            if (modSections && !modSections.every((selectedMod) => selectedMod.toUpperCase() in ModsEnum || mod.toUpperCase() === "NM")) continue;
+            if (modSections && !modSections.every((selectedMod) => selectedMod.toUpperCase() in enums.ModsEnum || mod.toUpperCase() === "NM")) continue;
 
             result.mods.include = modType !== "-";
             result.mods.exclude = modType === "-" && typeof force !== "undefined";
             result.mods.forceInclude = modType === "+" && typeof force !== "undefined";
             if (result.mods.include || result.mods.exclude || result.mods.forceInclude) {
-                result.mods.name = mod.replaceAll(/\+|!|-/g, "").toUpperCase() as Mod;
+                result.mods.name = mod.replaceAll(/\+|!|-/g, "").toUpperCase();
                 continue;
             }
         }

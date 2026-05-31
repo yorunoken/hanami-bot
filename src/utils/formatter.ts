@@ -2,8 +2,7 @@ import { accuracyCalculator, getPerformanceResults, getRetryCount, hitValueCalcu
 import { grades, rulesets } from "@utils/constants";
 import { insertData } from "@utils/database";
 import { Tables } from "@type/database";
-import type { Mode, UserScore, Beatmap, LeaderboardScore, ScoresInfo, Score, UserBestScore, UserBestScoreV2, UserScoreV2, ScoreV2, ProfileInfo } from "@type/osu";
-import type { ISOTimestamp, ScoreStatistics, UserExtended } from "osu-web.js";
+import type { Mode, UserScore, Beatmap, LeaderboardScore, ScoresInfo, Score, UserBestScore, UserBestScoreV2, UserScoreV2, ScoreV2, ProfileInfo, ISOTimestamp, ScoreStatistics, UserExtended } from "@type/osu";
 
 export async function getFormattedScore({
     scores,
@@ -48,9 +47,9 @@ export async function getFormattedScore({
         retries = getRetryCount(beatmapIds, play.beatmap.id);
     }
 
-    if ("score" in play) {
+    if ("score" in play && play.score !== undefined) {
         totalScore = play.score;
-        createdAt = play.created_at;
+        createdAt = play.created_at ?? "";
         scoreStatistics = play.statistics;
     } else {
         // handle V2 and leaderboard scores
@@ -58,8 +57,8 @@ export async function getFormattedScore({
             user = play.user.username;
             userId = play.user_id;
         }
-        totalScore = play.total_score;
-        createdAt = play.ended_at;
+        totalScore = play.total_score ?? 0;
+        createdAt = play.ended_at ?? "";
 
         scoreStatistics = {
             count_300: play.statistics.great ?? 0,
@@ -71,7 +70,7 @@ export async function getFormattedScore({
         };
     }
 
-    const objectsHit = (scoreStatistics.count_300 ?? 0) + (scoreStatistics.count_100 ?? 0) + (scoreStatistics.count_50 ?? 0) + scoreStatistics.count_miss;
+    const objectsHit = (scoreStatistics.count_300 ?? 0) + (scoreStatistics.count_100 ?? 0) + (scoreStatistics.count_50 ?? 0) + (scoreStatistics.count_miss ?? 0);
     const performance = await getPerformanceResults({
         hitValues: scoreStatistics,
         beatmapId: beatmap.id,
@@ -227,7 +226,7 @@ export function getFormattedProfile(user: UserExtended, mode: Mode): ProfileInfo
         rankedScore: statistics.ranked_score.toLocaleString(),
         totalScore: statistics.total_score.toLocaleString(),
         objectsHit: statistics.total_hits.toLocaleString(),
-        occupation: user.occupation,
+        occupation: user.occupation ?? null,
         interest: user.interests,
         location: user.location,
         recommendedStarRating: (Math.pow(statistics.pp, 0.4) * 0.195).toFixed(2),

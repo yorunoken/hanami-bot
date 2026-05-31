@@ -65,4 +65,24 @@ export class CommandContext {
             }
         }
     }
+
+    async sendWithPagination(options: any, embedOptions: any): Promise<void> {
+        const { ButtonStateCache } = await import("./cache");
+        const sentMessage = await this.editReply(options);
+        
+        if (this.isMessage && sentMessage && sentMessage.id) {
+            await ButtonStateCache.set(sentMessage.id, embedOptions);
+        } else if (this.isInteraction) {
+            setTimeout(async () => {
+                try {
+                    const message = await this.client.rest.getOriginalInteractionResponse(this.interaction!.applicationId, this.interaction!.token);
+                    if (message && message.id) {
+                        await ButtonStateCache.set(message.id, embedOptions);
+                    }
+                } catch {
+                    // Ignore errors if the message couldn't be fetched or cached
+                }
+            }, 100);
+        }
+    }
 }

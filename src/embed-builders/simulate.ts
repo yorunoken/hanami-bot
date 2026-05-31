@@ -1,15 +1,16 @@
-import { client } from "@utils/initialize";
+import { v2 } from "osu-api-extended";
+import { safeParse } from "@utils/safe-parse";
 import { accuracyCalculator, downloadBeatmap, getPerformanceResults, gradeCalculator, hitValueCalculator } from "@utils/osu";
 import { getEntry } from "@utils/database";
 import { grades, rulesets, SPACE } from "@utils/constants";
 import { Tables } from "@type/database";
 import { EmbedType } from "lilybird";
-import type { Mode } from "@type/osu";
+import { Mode } from "@type/osu";
 import type { SimulateBuilderOptions } from "@type/builders";
 import type { Embed } from "lilybird";
 
 export async function simulateBuilder({ beatmapId, mods, options }: SimulateBuilderOptions): Promise<Array<Embed.Structure>> {
-    const beatmapRequest = await client.safeParse(client.beatmaps.getBeatmap(beatmapId));
+    const beatmapRequest = await safeParse(v2.beatmaps.details({ type: 'difficulty', id: beatmapId }));
     if (!beatmapRequest.success) {
         return [
             {
@@ -57,7 +58,7 @@ export async function simulateBuilder({ beatmapId, mods, options }: SimulateBuil
         count_geki: current.state?.nGeki,
         count_katu: current.state?.nKatu,
     };
-    const grade = grades[gradeCalculator(map.mode as Mode, hitValues, mods ?? [""])];
+    const grade = grades[gradeCalculator(map.mode as Mode, hitValues, mods?.map(m => typeof m === "string" ? m : m.acronym) ?? [""])];
 
     const hitValuesString = hitValueCalculator(map.mode as Mode, hitValues);
 
@@ -95,7 +96,7 @@ export async function simulateBuilder({ beatmapId, mods, options }: SimulateBuil
             author: { name: `${mapset.status.charAt(0).toUpperCase()}${mapset.status.slice(1)} mapset by ${mapset.creator}`, icon_url: `https://a.ppy.sh/${mapset.user_id}` },
             fields: [
                 {
-                    name: `${rulesets[mode]} ${version}`,
+                    name: `${rulesets[mode as keyof typeof rulesets] ?? rulesets[Mode.OSU]} ${version}`,
                     value: scoreField.join("\n"),
                     inline: false,
                 },

@@ -17,12 +17,14 @@ export async function compareBuilder({ beatmap, plays, user, mode, mods, page = 
         const { exclude, forceInclude, include, name } = mods;
         const filteredPlays = [];
         for (const play of plays) {
-            const modsStr = play.mods.join("").toUpperCase() || "NM";
+            const modsStr = play.mods.map((mod) => typeof mod === "string" ? mod : mod.acronym).join("");
+            const modName = typeof name === "string" ? name : name?.acronym;
 
-            if (exclude && !modsStr.includes(name.toUpperCase())) filteredPlays.push(play);
-            else if (forceInclude && modsStr === name.toUpperCase()) filteredPlays.push(play);
-            else if (include && modsStr.includes(name.toUpperCase())) filteredPlays.push(play);
-            else if (!exclude && !forceInclude && !include) filteredPlays.push(play);
+            if (modName) {
+                if (exclude && !modsStr.includes(modName.toUpperCase())) filteredPlays.push(play);
+                else if (forceInclude && modsStr === modName.toUpperCase()) filteredPlays.push(play);
+                else if (include && modsStr.includes(modName.toUpperCase())) filteredPlays.push(play);
+            } else if (!exclude && !forceInclude && !include) filteredPlays.push(play);
         }
         plays = filteredPlays;
     }

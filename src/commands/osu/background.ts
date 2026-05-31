@@ -1,9 +1,10 @@
 import { backgroundBuilder } from "@builders";
 import { EmbedBuilderType } from "@type/builders";
 import { CommandData } from "@type/commands";
-import { Mode } from "@type/osu";
+import { Mode, type Beatmap } from "@type/osu";
 import { parseCommandArgs } from "@utils/args";
-import { client } from "@utils/initialize";
+import { v2 } from "osu-api-extended";
+import { safeParse } from "@utils/safe-parse";
 import { getBeatmapIdFromContext } from "@utils/osu";
 import { ApplicationCommandOptionType, EmbedType } from "lilybird";
 
@@ -34,7 +35,7 @@ async function getEmbed(beatmapId: string | number | null, authorId: string) {
         ];
     }
 
-    const beatmapRequest = await client.safeParse(client.beatmaps.getBeatmap(Number(beatmapId)));
+    const beatmapRequest = await safeParse(v2.beatmaps.details({ type: 'difficulty', id: Number(beatmapId) }));
     if (!beatmapRequest.success) {
         return [
             {
@@ -49,7 +50,7 @@ async function getEmbed(beatmapId: string | number | null, authorId: string) {
     const embeds = backgroundBuilder({
         type: EmbedBuilderType.BACKGROUND,
         initiatorId: authorId,
-        beatmap,
+        beatmap: beatmap as Beatmap,
     });
     return embeds;
 }

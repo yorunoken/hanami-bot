@@ -6,11 +6,12 @@ import { Mode } from "@type/osu";
 import { parseCommandArgs } from "@utils/args";
 import { getBeatmapIdFromContext, getBeatmapTopScores } from "@utils/osu";
 import { createPaginationActionRow } from "@utils/pagination";
-import { ButtonStateCache } from "@utils/cache";
-import { client } from "@utils/initialize";
 import { ApplicationCommandOptionType, EmbedType } from "lilybird";
 import type { LeaderboardBuilderOptions } from "@type/builders";
-import type { Mod } from "osu-web.js";
+import { v2 } from "osu-api-extended";
+import { safeParse } from "@utils/safe-parse";
+import type { Mod } from "@type/mods";
+import type { GameMode, Beatmap } from "@type/osu";
 
 const modeAliases: Record<string, { isGlobal: boolean }> = {
     leaderboard: { isGlobal: true },
@@ -63,7 +64,7 @@ async function getEmbeds(beatmapId: string | undefined, authorId: string, mods: 
         };
     }
 
-    const beatmapRequest = await client.safeParse(client.beatmaps.getBeatmap(Number(resolvedBeatmapId)));
+    const beatmapRequest = await safeParse(v2.beatmaps.details({ type: 'difficulty', id: Number(resolvedBeatmapId) }));
     if (!beatmapRequest.success) {
         return {
             embeds: [
@@ -91,9 +92,9 @@ async function getEmbeds(beatmapId: string | undefined, authorId: string, mods: 
 
     const scores = await getBeatmapTopScores({
         beatmapId: Number(resolvedBeatmapId),
-        mode: beatmap.mode,
+        mode: beatmap.mode as GameMode,
         isGlobal,
-        mods: mods.name ? (mods.name.match(/.{1,2}/g) as Array<Mod>) : undefined,
+        mods: mods.name ? ((typeof mods.name === "string" ? mods.name : mods.name.acronym).match(/.{1,2}/g) as Array<string>) : undefined,
     });
 
     if (scores.length === 0) {
@@ -112,7 +113,7 @@ async function getEmbeds(beatmapId: string | undefined, authorId: string, mods: 
         type: EmbedBuilderType.LEADERBOARD,
         initiatorId: authorId,
         page,
-        beatmap,
+        beatmap: beatmap as Beatmap,
         scores,
     };
 
@@ -122,17 +123,7 @@ async function getEmbeds(beatmapId: string | undefined, authorId: string, mods: 
         components: createPaginationActionRow(embedOptions),
     };
 
-    // Cache for pagination if it's an application command
-    if (context.channelId) {
-        // This is a bit of a hack to handle caching for application commands
-        // We'll need to cache after the reply is sent
-        setTimeout(async () => {
-            const sentMessage = await context.client.channels.getMessage(context.channelId, context.id);
-            if (sentMessage) {
-                await ButtonStateCache.set(sentMessage.id, embedOptions);
-            }
-        }, 100);
-    }
+    await context.sendWithPagination(messageOptions, embedOptions);
 
     return messageOptions;
 }

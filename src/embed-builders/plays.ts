@@ -22,14 +22,17 @@ export async function playBuilder({ plays, user, mode, index, mods, isMultiple, 
         const { exclude, forceInclude, include, name } = mods;
         const filteredPlays = [];
         for (const play of plays) {
-            const modsStr = play.mods.join("").toUpperCase() || "NM";
+            const modsStr = play.mods.map((mod) => typeof mod === "string" ? mod : mod.acronym).join("");
+            const modName = typeof name === "string" ? name : name?.acronym;
 
-            if (exclude) {
-                if (!modsStr.includes(name.toUpperCase())) filteredPlays.push(play);
-            } else if (forceInclude) {
-                if (modsStr === name.toUpperCase()) filteredPlays.push(play);
-            } else if (include) {
-                if (modsStr.includes(name.toUpperCase())) filteredPlays.push(play);
+            if (modName) {
+                if (exclude) {
+                    if (!modsStr.includes(modName.toUpperCase())) filteredPlays.push(play);
+                } else if (forceInclude) {
+                    if (modsStr === modName.toUpperCase()) filteredPlays.push(play);
+                } else if (include) {
+                    if (modsStr.includes(modName.toUpperCase())) filteredPlays.push(play);
+                }
             } else filteredPlays.push(play);
         }
 

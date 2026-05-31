@@ -7,7 +7,8 @@ import { Mode, PlayType } from "@type/osu";
 import { parseCommandArgs } from "@utils/args";
 import { createPaginationActionRow } from "@utils/pagination";
 import { getUserScores } from "@utils/score-api";
-import { client } from "@utils/initialize";
+import { v2 } from "osu-api-extended";
+import { safeParse } from "@utils/safe-parse";
 import { ApplicationCommandOptionType, EmbedType } from "lilybird";
 import type { PlaysBuilderOptions } from "@type/builders";
 
@@ -59,21 +60,27 @@ export async function run(ctx: CommandContext) {
         return;
     }
 
-    const reply = await getEmbeds(user, ctx.user.id, index, mods, includeFails);
-    await ctx.editReply(reply);
+    const { reply, embedOptions } = await getEmbeds(user, ctx.user.id, index, includeFails, mods);
+    if (embedOptions) {
+        await ctx.sendWithPagination(reply, embedOptions);
+    } else {
+        await ctx.editReply(reply);
+    }
 }
 
-async function getEmbeds(user: SuccessUser, authorId: string, index: number, mods: any, includeFails: boolean): Promise<MessageReplyOptions> {
-    const osuUserRequest = await client.safeParse(client.users.getUser(user.banchoId, { urlParams: { mode: user.mode } }));
+async function getEmbeds(user: SuccessUser, authorId: string, index: number, includeFails: boolean, mods: any): Promise<{ reply: MessageReplyOptions, embedOptions?: PlaysBuilderOptions }> {
+    const osuUserRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: user.mode }));
     if (!osuUserRequest.success) {
         return {
-            embeds: [
-                {
-                    type: EmbedType.Rich,
-                    title: "Uh oh! :x:",
-                    description: `It seems like the user **\`${user.banchoId}\`** doesn't exist! :(`,
-                },
-            ],
+            reply: {
+                embeds: [
+                    {
+                        type: EmbedType.Rich,
+                        title: "Uh oh! :x:",
+                        description: `It seems like the user **\`${user.banchoId}\`** doesn't exist! :(`,
+                    },
+                ],
+            }
         };
     }
     const osuUser = osuUserRequest.data;
@@ -82,13 +89,15 @@ async function getEmbeds(user: SuccessUser, authorId: string, index: number, mod
 
     if (plays.length === 0) {
         return {
-            embeds: [
-                {
-                    type: EmbedType.Rich,
-                    title: "Uh oh! :x:",
-                    description: `It seems like \`${osuUser.username}\` hasn't had any recent plays in the last 24 hours!`,
-                },
-            ],
+            reply: {
+                embeds: [
+                    {
+                        type: EmbedType.Rich,
+                        title: "Uh oh! :x:",
+                        description: `It seems like \`${osuUser.username}\` hasn't set any recent plays! :(`,
+                    },
+                ],
+            }
         };
     }
 
@@ -105,12 +114,13 @@ async function getEmbeds(user: SuccessUser, authorId: string, index: number, mod
     };
 
     const embeds = await playBuilder(embedOptions);
-    const messageOptions: MessageReplyOptions = {
-        embeds,
-        components: createPaginationActionRow(embedOptions),
+    return {
+        reply: {
+            embeds,
+            components: createPaginationActionRow(embedOptions),
+        },
+        embedOptions,
     };
-
-    return messageOptions;
 }
 
 export const data = {

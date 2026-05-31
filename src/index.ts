@@ -1,24 +1,11 @@
-import { initializeDatabase, client } from "@utils/initialize";
+import { initializeDatabase, initializeOsuApi } from "@utils/initialize";
 import { logger } from "@utils/logger";
-import { getAccessToken } from "@utils/osu";
 import { initializeRedis, closeRedis } from "@utils/cache";
 import { createHandler } from "@lilybird/handlers/simple";
 import { CachingDelegationType, createClient, Intents } from "lilybird";
 import { Channel, Guild, GuildVoiceChannel } from "@lilybird/transformers";
 
-// refresh token every hour
-setInterval(setToken, 1000 * 60 * 60);
-
-async function setToken(): Promise<void> {
-    const tokenResult = await getAccessToken(+process.env.OSU_CLIENT_ID, process.env.OSU_CLIENT_SECRET, ["public"]);
-    if (!tokenResult) {
-        throw new Error("Failed to get access token");
-    }
-    const { accessToken } = tokenResult;
-    client.setAccessToken(accessToken);
-}
-
-await setToken();
+await initializeOsuApi();
 
 // Initialize Redis
 await initializeRedis();

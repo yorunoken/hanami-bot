@@ -3,13 +3,13 @@ import { MessageReplyOptions } from "@lilybird/transformers";
 import { EmbedBuilderType } from "@type/builders";
 import { SuccessUser, UserType } from "@type/command-args";
 import { CommandData } from "@type/commands";
-import { Mode } from "@type/osu";
+import { Mode, type Beatmap } from "@type/osu";
 import { parseCommandArgs } from "@utils/args";
 import { getBeatmapIdFromContext } from "@utils/osu";
 import { getBeatmapUserScores } from "@utils/score-api";
 import { createPaginationActionRow } from "@utils/pagination";
-import { ButtonStateCache } from "@utils/cache";
-import { client } from "@utils/initialize";
+import { v2 } from "osu-api-extended";
+import { safeParse } from "@utils/safe-parse";
 import { ApplicationCommandOptionType, EmbedType } from "lilybird";
 
 const modeAliases: Record<string, { mode: Mode }> = {
@@ -45,7 +45,7 @@ export async function run(ctx: CommandContext) {
 }
 
 async function getEmbeds(user: SuccessUser, authorId: string, mods: any, context: any): Promise<MessageReplyOptions> {
-    const osuUserRequest = await client.safeParse(client.users.getUser(user.banchoId, { urlParams: { mode: user.mode } }));
+    const osuUserRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: user.mode }));
     if (!osuUserRequest.success) {
         return {
             embeds: [
@@ -72,7 +72,7 @@ async function getEmbeds(user: SuccessUser, authorId: string, mods: any, context
         };
     }
 
-    const beatmapRequest = await client.safeParse(client.beatmaps.getBeatmap(Number(beatmapId)));
+    const beatmapRequest = await safeParse(v2.beatmaps.details({ type: 'difficulty', id: Number(beatmapId) }));
     if (!beatmapRequest.success) {
         return {
             embeds: [
@@ -117,29 +117,19 @@ async function getEmbeds(user: SuccessUser, authorId: string, mods: any, context
         initiatorId: authorId,
         mode: user.mode,
         user: osuUser,
-        beatmap,
+        beatmap: beatmap as Beatmap,
         plays,
         mods,
         page: 0,
     };
 
     const embeds = await compareBuilder(embedOptions);
-    const messageOptions: MessageReplyOptions = {
+    const messageOptions = {
         embeds,
         components: createPaginationActionRow(embedOptions),
     };
 
-    // Cache for pagination if it's an application command
-    if (context.channelId) {
-        // This is a bit of a hack to handle caching for application commands
-        // We'll need to cache after the reply is sent
-        setTimeout(async () => {
-            const sentMessage = await context.client.channels.getMessage(context.channelId, context.id);
-            if (sentMessage) {
-                await ButtonStateCache.set(sentMessage.id, embedOptions);
-            }
-        }, 100);
-    }
+    await context.sendWithPagination(messageOptions, embedOptions);
 
     return messageOptions;
 }

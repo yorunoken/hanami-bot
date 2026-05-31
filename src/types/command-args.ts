@@ -1,5 +1,5 @@
 import type { User as UserDb } from "./database";
-import type { Mod } from "osu-web.js";
+import type { Mod } from "./mods";
 import type { Mode } from "./osu";
 
 export const enum UserType {
@@ -53,7 +53,7 @@ export interface Mods {
     include: boolean | null;
     exclude: boolean | null;
     forceInclude: boolean | null;
-    name: Mod | null;
+    name: Mod | string | null;
 }
 
 export interface PrefixCommandArgs {

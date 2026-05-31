@@ -1,14 +1,16 @@
-import { client } from "@utils/initialize";
+import { v2 } from "osu-api-extended";
+import { safeParse } from "@utils/safe-parse";
 import { downloadBeatmap, getPerformanceResults } from "@utils/osu";
 import { getEntry } from "@utils/database";
 import { rulesets } from "@utils/constants";
+import { Mode } from "@type/osu";
 import { Tables } from "@type/database";
 import { EmbedType } from "lilybird";
 import type { BeatmapBuilderOptions } from "@type/builders";
 import type { Embed } from "lilybird";
 
 export async function beatmapBuilder({ beatmapId, mods }: BeatmapBuilderOptions): Promise<Array<Embed.Structure>> {
-    const beatmapRequest = await client.safeParse(client.beatmaps.getBeatmap(Number(beatmapId)));
+    const beatmapRequest = await safeParse(v2.beatmaps.details({ type: 'difficulty', id: Number(beatmapId) }));
     if (!beatmapRequest.success) {
         return [
             {
@@ -72,7 +74,7 @@ export async function beatmapBuilder({ beatmapId, mods }: BeatmapBuilderOptions)
             author: { name: `${mapset.status.charAt(0).toUpperCase()}${mapset.status.slice(1)} mapset by ${mapset.creator}`, icon_url: `https://a.ppy.sh/${mapset.user_id}` },
             fields: [
                 {
-                    name: `${rulesets[mode]} ${version}`,
+                    name: `${rulesets[mode as keyof typeof rulesets] ?? rulesets[Mode.OSU]} ${version}`,
                     value: infoField.join("\n"),
                     inline: false,
                 },
